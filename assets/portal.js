@@ -4,6 +4,7 @@ const TRADES = [["hvac","HVAC","var(--hvac)"],["plumbing","Plumbing","var(--plum
 const AREA = { "Orange": "Orange County", "Miami-Dade": "Miami-Dade County" }, SRC = { "Orange": "City of Orlando permits", "Miami-Dade": "Miami-Dade County permits" };
 const UNIT = { hvac: "change-outs", plumbing: "plumbing permits", electrical: "electrical permits", roofing: "roofing permits" };
 let me, counties = [], county, trade = "hvac", cache = {}, feed = [], watch = new Set(), sel = null, map, pins, area;
+const TL = t => ({ hvac: "HVAC", mechanical: "Mechanical", plumbing: "Plumbing", electrical: "Electrical", roofing: "Roofing", building: "Building", general: "General" }[t] || t[0].toUpperCase() + t.slice(1));
 const fmt = n => (+n || 0).toLocaleString("en-US");
 const n0 = c => c.card.n0 ?? +c.card.facts[0].v, n1 = c => c.card.n1 ?? +c.card.facts[1].v;
 const pct = c => { const a = n0(c), b = n1(c); return b ? Math.round(100 * (a - b) / b) : null; };
@@ -100,7 +101,7 @@ function pick(id, scroll) {
     <div><dt>First licensed</dt><dd>${esc(String(get(/^First license/) || "n/a").slice(0, 4))}</dd></div><div><dt>Busiest ZIP</dt><dd>${esc(z)}</dd></div>
     <div><dt>${UNIT[trade][0].toUpperCase() + UNIT[trade].slice(1)}, 12 months</dt><dd>${fmt(n0(c))}</dd></div><div><dt>Against prior year</dt><dd>${p === null ? "New" : (p >= 0 ? "+" : "−") + Math.abs(p) + "%"}</dd></div>
     <div><dt>Workers' comp sites</dt><dd>${esc(get(/^Workers/) || "n/a")}</dd></div><div><dt>Equipment on tax roll</dt><dd>${esc(get(/^Equipment/) || "n/a")}</dd></div>
-    <div><dt>Trades licensed</dt><dd>${esc((c.card.trades || []).join(", ") || "n/a")}</dd></div><div><dt>Match grade</dt><dd>${esc(c.card.match_grade[0].toUpperCase() + c.card.match_grade.slice(1))}</dd></div></dl>
+    <div><dt>Trades licensed</dt><dd>${esc((c.card.trades || []).map(TL).join(", ") || "n/a")}</dd></div><div><dt>Match grade</dt><dd>${esc(c.card.match_grade[0].toUpperCase() + c.card.match_grade.slice(1))}</dd></div></dl>
     ${c.card.why && c.card.why.length ? `<p class="why">Why it stands out: ${c.card.why.map(esc).join("; ")}.</p>` : ""}
     <div class="acts"><button class="btn" id="wbtn">${watch.has(id) ? "Remove from watchlist" : "Add to watchlist"}</button><button class="btn quiet" id="abtn">Show work area</button></div>
     <p class="src">Sources: ${esc(SRC[county])}, FL DBPR licenses, FL workers' comp, FL DOR tangible property roll.</p>`;

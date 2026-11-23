@@ -40,7 +40,7 @@
         why: up ? ["permits up " + Math.round(100 * (w.n0 / w.n1 - 1)) + "% on the prior year", "workers' comp locations 1 to 2 since 2023"] : [],
         area: { permits0: Math.round(tot0), permits1: Math.round(tot1), firms: 214 + i % 3, unit: "permits" },
         facts: [{ k: "First license issued", v: String(1988 + (i * 3) % 34) }, { k: "Workers' comp locations in force", v: (1 + i % 3) + " (1 in 2023)" }, { k: "Equipment on tangible property roll", v: "$" + (40000 + i * 9100).toLocaleString() }] } });
-      if (i < 40 && (up || i % 9 === 4)) feed.push({ id: id, county, trade: t, firm_id: id, firm_name: w.name, headline: up ? `Moved up to ${i + 1}st in permits, up ${Math.round(100 * (w.n0 / w.n1 - 1))}%`.replace(/(\d)st/, (m, d) => d + ({1:"st",2:"nd",3:"rd"}[d] || "th")) : `Permits down ${Math.round(100 * (1 - w.n0 / w.n1)) || 8}% on the prior year` });
+      if (i < 40 && (up || i % 9 === 4)) feed.push({ id: id, county, trade: t, firm_id: id, firm_name: w.name, headline: up ? `Moved up to ${i + 1}st in permits, up ${Math.round(100 * (w.n0 / w.n1 - 1))}%`.replace(/(\d)st/, (m, d, o, s) => d + (/1[123]$/.test(String(i + 1)) ? "th" : ({1:"st",2:"nd",3:"rd"}[d] || "th"))) : `Permits down ${Math.max(8, Math.round(100 * (1 - w.n0 / w.n1)))}% on the prior year` });
       id++; });
   }
   const watch = [{ firm_id: 3 }, { firm_id: 65 }];
