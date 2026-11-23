@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tradecount Sample</title>
+<style>
+:root{--ink:#1d2327;--muted:#5d6870;--paper:#f6f3ee;--card:#fff;--line:#ddd6cc;--copper:#b5652b;--green:#2f7a5b;--red:#a33b2f}
+@media (prefers-color-scheme:dark){:root{--ink:#ece8e1;--muted:#a7a29a;--paper:#16191b;--card:#1f2326;--line:#343a3e;--copper:#d9894e;--green:#6cc29b;--red:#e07c6e}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+.brand{font-weight:700;letter-spacing:.04em}.muted{color:var(--muted)}.small{font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 10px}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;color:var(--muted);font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums}button,select,input{font:inherit}
+button{background:var(--copper);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+button.ghost{background:transparent;color:var(--copper);border:1px solid var(--copper)}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid currentColor}
+.up{color:var(--green)}.down{color:var(--red)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#wm{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.07;overflow:hidden;font-size:15px;line-height:70px;color:var(--ink);transform:rotate(-24deg) scale(1.5);white-space:pre}
+dialog{max-width:620px;width:92vw;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.tabs button{background:transparent;color:var(--ink);border:1px solid var(--line)}.tabs button.on{background:var(--copper);color:#fff;border-color:var(--copper)}
+@media print{body{display:none}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+</head>
+<body oncontextmenu="return false">
+<header><span class="brand">TRADECOUNT</span><span id="who" class="small muted"></span></header>
+<main>
+  <section id="signin" class="card" hidden>
+    <h2>Sign In</h2>
+    <p class="muted small">This sample is private. Enter your email and we send a sign-in link.</p>
+    <div class="row"><input id="email" type="email" placeholder="you@company.com" style="padding:7px;min-width:260px"><button id="send">Send link</button></div>
+    <p id="sent" class="small muted"></p>
+  </section>
+  <section id="app" hidden>
+    <div class="row tabs" id="tabs" style="margin-bottom:14px"></div>
+    <div class="card"><h2>What Changed</h2><p class="small muted" id="asof"></p><table id="feed"></table></div>
+    <div class="card"><h2>Call First</h2><p class="small muted">Firms growing fastest, with the public records behind each one. Growth only; nothing here predicts a sale.</p><table id="callfirst"></table></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Top Contractors By Change-Outs</h2><span class="small muted">Click a firm for its profile</span></div><table id="top"></table></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Your Watchlist</h2><button class="ghost" id="csv">Download watchlist CSV</button></div><p class="small muted">Up to 100 firms. There is no full-map export.</p><table id="watch"></table></div>
+    <p class="small muted">Public-record facts and labeled estimates. Each fact shows its source and as-of date. Not advice.</p>
+  </section>
+</main>
+<dialog id="dlg"><div id="dlgbody"></div><p><button id="close">Close</button></p></dialog>
+<div id="wm"></div>
+<script>
+const C = window.TC_CONFIG, sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
+const $ = s => document.querySelector(s), esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let cards = [], feed = [], watch = new Set(), county = null, me = null;
+
+$("#send").onclick = async () => {
+  const email = $("#email").value.trim(); if (!email) return;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
+  $("#sent").textContent = error ? "Could not send: " + error.message : "Check your email for the sign-in link.";
+};
+$("#close").onclick = () => $("#dlg").close();
+document.addEventListener("copy", e => { e.preventDefault(); });
+
+async function start() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("#signin").hidden = false; return; }
+  me = session.user; $("#who").innerHTML = esc(me.email) + ' · <a href="#" id="out">Sign out</a>';
+  $("#out").onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+  $("#wm").textContent = Array(60).fill(Array(8).fill(me.email + "   ").join("")).join("\n");
+  const [a, c, f, w] = await Promise.all([
+    sb.from("tc_account").select("counties").maybeSingle(),
+    sb.from("tc_firm_card").select("firm_id,county,rank,name,card,as_of").order("rank").limit(400),
+    sb.from("tc_change_feed").select("*").order("id").limit(100),
+    sb.from("tc_watch").select("firm_id"),
+  ]);
+  const counties = (a.data && a.data.counties) || [];
+  if (!counties.length) { $("#app").hidden = false; $("#app").innerHTML = '<div class="card">Your account has no territory yet.</div>'; return; }
+  cards = c.data || []; feed = f.data || []; (w.data || []).forEach(r => watch.add(r.firm_id));
+  county = counties[0];
+  const AREA = { "Orange": "City of Orlando", "Miami-Dade": "Miami-Dade County" };
+  $("#tabs").innerHTML = counties.map(x => `<button data-c="${esc(x)}">${esc(AREA[x] || x + " County")}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b => b.onclick = () => { county = b.dataset.c; render(); });
+  $("#app").hidden = false; render();
+}
+
+function fact(card, i) { return card.facts[i] ? card.facts[i].v : ""; }
+function render() {
+  $("#tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.c === county));
+  const cs = cards.filter(x => x.county === county);
+  $("#asof").textContent = cs.length ? "As of " + cs[0].as_of + ". Change-outs compare Dec 2025 to Nov 2026 against the prior 12 months." : "";
+  $("#feed").innerHTML = "<tr><th>Firm</th><th>What changed</th></tr>" + feed.filter(x => x.county === county)
+    .map(x => `<tr><td><a href="#" data-id="${x.firm_id}">${esc(x.firm_name)}</a></td><td class="${/down/.test(x.headline) ? "down" : "up"}">${esc(x.headline)}</td></tr>`).join("");
+  const cf = cs.filter(x => x.card.call_first).sort((a, b) => a.card.call_first - b.card.call_first);
+  $("#callfirst").innerHTML = "<tr><th>#</th><th>Firm</th><th>Why</th><th class='n'>Points</th></tr>" + cf
+    .map(x => `<tr><td>${x.card.call_first}</td><td><a href="#" data-id="${x.firm_id}">${esc(x.name)}</a></td><td class="small">${x.card.why.map(esc).join("; ")}</td><td class="n">${x.card.score}</td></tr>`).join("");
+  $("#top").innerHTML = "<tr><th>Rank</th><th>Firm</th><th class='n'>Change-outs</th><th class='n'>Prior yr</th><th>Share</th><th>Match</th><th></th></tr>" + cs.slice(0, 100)
+    .map(x => `<tr><td>${x.rank}</td><td><a href="#" data-id="${x.firm_id}">${esc(x.name)}</a></td><td class="n">${fact(x.card,0)}</td><td class="n">${fact(x.card,1)}</td><td class="small">${esc(fact(x.card,2))}</td><td><span class="pill">${esc(x.card.match_grade)}</span></td><td><button class="ghost" data-w="${x.firm_id}">${watch.has(x.firm_id) ? "Unwatch" : "Watch"}</button></td></tr>`).join("");
+  const wl = cards.filter(x => watch.has(x.firm_id));
+  $("#watch").innerHTML = wl.length ? "<tr><th>Firm</th><th>County</th><th class='n'>Change-outs</th></tr>" + wl.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.county)}</td><td class="n">${fact(x.card,0)}</td></tr>`).join("") : "<tr><td class='muted'>No firms watched yet.</td></tr>";
+  document.querySelectorAll("[data-id]").forEach(a => a.onclick = e => { e.preventDefault(); profile(+a.dataset.id); });
+  document.querySelectorAll("[data-w]").forEach(b => b.onclick = () => toggle(+b.dataset.w));
+}
+function profile(id) {
+  const x = cards.find(c => c.firm_id === id && c.county === county) || cards.find(c => c.firm_id === id); if (!x) return;
+  $("#dlgbody").innerHTML = `<h2>${esc(x.name)}</h2><p class="small muted">${esc({Orange: "City of Orlando", "Miami-Dade": "Miami-Dade County"}[x.county] || x.county)} rank #${x.rank} · match grade ${esc(x.card.match_grade)} · licenses ${x.card.licenses.map(esc).join(", ")}</p>
+    <table><tr><th>Fact</th><th>Value</th><th>Source, as of</th></tr>${x.card.facts.map(f => `<tr><td>${esc(f.k)}</td><td>${esc(f.v)}</td><td class="small muted">${esc(f.src)}, ${esc(f.as_of)}</td></tr>`).join("")}</table>
+    <p class="small">${x.card.why.length ? "Why it ranks: " + x.card.why.map(esc).join("; ") : "No growth signals this year."}</p>
+    <p class="small muted">Facts from public records, tied by the method shown. Not a valuation and not a forecast.</p>`;
+  $("#dlg").showModal();
+}
+async function toggle(id) {
+  if (watch.has(id)) { await sb.from("tc_watch").delete().eq("firm_id", id); watch.delete(id); }
+  else { if (watch.size >= 100) return alert("Watchlist is capped at 100 firms."); await sb.from("tc_watch").insert({ user_id: me.id, firm_id: id }); watch.add(id); }
+  render();
+}
+$("#csv").onclick = () => {
+  const wl = cards.filter(x => watch.has(x.firm_id)).slice(0, 100);
+  const head = ["firm", "county", "rank", "change_outs_12m", "change_outs_prior", "share", "match_grade", "licenses", "exported_by", "exported_at"];
+  const rows = wl.map(x => [x.name, x.county, x.rank, fact(x.card,0), fact(x.card,1), fact(x.card,2), x.card.match_grade, x.card.licenses.join(" "), me.email, new Date().toISOString()]);
+  const csv = [head, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "tradecount-watchlist.csv"; a.click();
+};
+start();
+</script>
+</body>
+</html>
