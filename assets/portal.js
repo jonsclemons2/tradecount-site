@@ -8,7 +8,7 @@ const COV = { "Orange": "City of Orlando permits since 2021, plus state records.
   "Lee": "City of Cape Coral permits since 2021, plus state records. Fort Myers and unincorporated Lee County aren't in the free file." };
 const COV_STATE = "State records only: workers' comp sites, equipment on the tax roll and licenses. This county publishes no free permit file that names the contractor.";
 const GRADE = { permits: ["Permit history", "Permits and state records for most years"], state: ["State records", "Workers' comp or equipment on file for three years or more"], thin: ["Thin record", "Little on file beyond the license"] };
-const GROWTH_TRADES = new Set(["hvac"]);
+const GROWTH_TRADES = new Set(["hvac", "plumbing", "electrical", "roofing"]);
 const UNIT = { hvac: "change-outs", plumbing: "plumbing permits", electrical: "electrical permits", roofing: "roofing permits" };
 let me, counties = [], county, trade = "hvac", cache = {}, hist = {}, feed = [], watch = new Set(), sel = null, map, pins, area, view = "growth", q = "", cfOnly = false;
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
@@ -167,8 +167,8 @@ async function toggle(id) {
 async function showWatch() {
   const rows = []; for (const [t] of TRADES) (await load(t)).forEach(c => { if (watch.has(c.firm_id)) rows.push(c); });
   const have = new Set(rows.map(c => c.firm_id)), rest = [...watch].filter(id => !have.has(id));
-  if (rest.length) { const { data } = await sb.from("tc_firm_history").select("firm_id,county,trade,name,series").in("firm_id", rest).eq("trade", "hvac");
-    (data || []).forEach(h => { const s = h.series, i = s.y.indexOf(s.full); rows.push({ firm_id: h.firm_id, county: h.county, trade: h.trade, name: h.name, rank: "", card: { n0: s.p ? s.p[i] : "", n1: "", match_grade: "", licenses: [] } }); }); }
+  if (rest.length) { const { data } = await sb.from("tc_firm_history").select("firm_id,county,trade,name,series").in("firm_id", rest);
+    (data || []).forEach(h => { if (have.has(h.firm_id)) return; have.add(h.firm_id); const s = h.series, i = s.y.indexOf(s.full); rows.push({ firm_id: h.firm_id, county: h.county, trade: h.trade, name: h.name, rank: "", card: { n0: s.p ? s.p[i] : "", n1: "", match_grade: "", licenses: [] } }); }); }
   $("#main").innerHTML = `<div class="head"><h1>Watchlist</h1><button class="btn quiet" id="csv"${rows.length ? "" : " disabled"}>Download watchlist CSV</button></div>
     <section class="panel">${rows.length ? `<table class="wtable"><thead><tr><th>Firm</th><th>Trade</th><th>County</th><th>Rank</th><th>Last 12 mo</th><th>Change</th></tr></thead><tbody>${rows.map(c => { const p = pct(c);
       return `<tr><td>${esc(c.name)}</td><td>${TRADES.find(t => t[0] === c.trade)[1]}</td><td>${esc(AREA[c.county] || c.county)}</td><td>${c.rank}</td><td>${fmt(n0(c))}</td><td>${c.rank === "" ? "Five-year view" : p === null ? "New" : (p >= 0 ? "+" : "−") + Math.abs(p) + "%"}</td></tr>`; }).join("")}</tbody></table>`
@@ -218,7 +218,7 @@ async function showGrowth() {
     <dl class="facts"><div><dt>Licensed ${label} firms</dt><dd>${fmt(hs.length)}</dd></div><div><dt>With a five-year record</dt><dd>${fmt(withRec)}</dd></div>
     <div><dt>Growing on the record</dt><dd>${fmt(ranked.length)}</dd></div><div><dt>What we can see here</dt><dd class="cov ${hasP ? "p" : ""}">${hasP ? "Permits and state records" : "State records only"}</dd></div></dl></div>
     <div class="intro">${purpose("growth")}${lensSwitch()}</div>
-    <p class="covnote">${esc(COV[county] || COV_STATE)}</p>
+    <p class="covnote">${esc(COV[county] || COV_STATE)}${trade === "roofing" ? " Roofers' workers' comp and equipment records aren't matched yet, so roofing shows permits and licenses for now." : ""}</p>
     <div class="lower g5">
       <section class="panel"><div class="ph"><h2>Fastest growing, ${y0} to now</h2><input id="find" type="search" placeholder="Find any ${label} firm" aria-label="Find a firm" value="${esc(q)}"></div>
         <div class="listwrap"><table class="rank grow"><thead><tr><th></th><th>Firm and what grew</th><th>Five years</th><th>Growth</th></tr></thead><tbody id="rows"></tbody></table></div></section>

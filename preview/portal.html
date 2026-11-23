@@ -25,7 +25,7 @@
 (function () {
   let s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
   const A = ["Sunbelt","Lakeshore","Bayline","Coquina","Palmetto","Gulfstream","Keystone","Harbor","Seminole","Citrus","Tidewater","Banyan","Crescent","Pineland","Osprey","Marlin","Heron","Cypress","Sandpiper","Manatee","Orchid","Saltwater","Everglade","Brightwater","Royal Palm"];
-  const S = { hvac: ["Air Services","Air & Heat","Cooling","Comfort Systems","Mechanical"], plumbing: ["Plumbing","Pipe & Drain","Plumbing Co","Rooter & Plumbing","Water Works"], electrical: ["Electric","Electrical Contractors","Power & Light","Electric Co","Wiring"] };
+  const S = { hvac: ["Air Services","Air & Heat","Cooling","Comfort Systems","Mechanical"], plumbing: ["Plumbing","Pipe & Drain","Plumbing Co","Rooter & Plumbing","Water Works"], electrical: ["Electric","Electrical Contractors","Power & Light","Electric Co","Wiring"], roofing: ["Roofing","Roof Systems","Roofing & Sheet Metal","Roofing Co","Exteriors"] };
   const Z = { Orange: [[28.54,-81.38,"32801"],[28.6,-81.29,"32817"],[28.47,-81.45,"32839"],[28.43,-81.31,"32822"],[28.58,-81.47,"32808"],[28.5,-81.2,"32829"],[28.66,-81.36,"32810"],[28.45,-81.48,"32819"]],
               "Miami-Dade": [[25.77,-80.2,"33130"],[25.83,-80.27,"33142"],[25.69,-80.36,"33183"],[25.87,-80.21,"33150"],[25.74,-80.3,"33155"],[25.94,-80.24,"33169"],[25.61,-80.4,"33157"],[25.79,-80.38,"33172"]] };
   const cards = [], feed = []; let id = 1;
@@ -47,15 +47,15 @@
   const watch = [{ firm_id: 3 }, { firm_id: 65 }];
   // Five-year history, invented: Orange has permits, Collier has state records only.
   const hist = [], Y = [2021, 2022, 2023, 2024, 2025, 2026];
-  for (const county of ["Orange", "Collier"]) for (let i = 0; i < 90; i++) {
+  for (const t of ["hvac","plumbing","electrical","roofing"]) for (const county of ["Orange", "Collier"]) for (let i = 0; i < 90; i++) {
     const big = r(), grow = .6 + 1.4 * r(), thin = i % 5 === 4, p = county === "Orange" ? Y.map((y, k) => Math.round((20 + 200 * big) * Math.pow(grow, k / 5) * (k === 5 ? .85 : 1))) : null;
-    const wc0 = thin ? null : 1 + Math.floor(3 * big), wc = Y.map((y, k) => thin ? null : Math.max(1, Math.round(wc0 * Math.pow(grow, k / 5))));
-    const eq = Y.map((y, k) => thin || i % 3 === 1 ? null : Math.round((30000 + 400000 * big) * Math.pow(grow, k / 5)));
-    const up = [p && p[4] >= 20 && p[4] > p[0] * 1.1 ? "permits" : null, wc[5] > (wc[0] || 0) && wc[5] >= 2 ? "comp sites" : null, eq[0] && eq[4] >= 50000 && eq[4] > eq[0] * 1.1 ? "equipment" : null].filter(Boolean);
-    hist.push({ firm_id: 500 + hist.length, county, trade: "hvac", name: A[(i * 11) % 25] + " " + S.hvac[(i + Math.floor(i / 25)) % 5], since: 1990 + (i * 7) % 33,
-      coverage: thin ? "thin" : p ? "permits" : "state", score: up.length ? up.length + grow - 1 : null, growth_rank: null,
+    const nr = thin || t === "roofing", wc0 = nr ? null : 1 + Math.floor(3 * big), wc = Y.map((y, k) => nr ? null : Math.max(1, Math.round(wc0 * Math.pow(grow, k / 5))));
+    const eq = Y.map((y, k) => nr || i % 3 === 1 ? null : Math.round((30000 + 400000 * big) * Math.pow(grow, k / 5)));
+    const up = [p && p[4] >= 20 && p[4] > p[0] * 1.1 ? "permits" : null, wc[5] && wc[5] > (wc[0] || 0) && wc[5] >= 2 ? "comp sites" : null, eq[0] && eq[4] >= 50000 && eq[4] > eq[0] * 1.1 ? "equipment" : null].filter(Boolean);
+    hist.push({ firm_id: 500 + hist.length, county, trade: t, name: A[(i * 11 + (t === "hvac" ? 0 : t.length)) % 25] + " " + S[t][(i + Math.floor(i / 25)) % 5], since: 1990 + (i * 7) % 33,
+      coverage: thin || (t === "roofing" && !p) ? "thin" : p ? "permits" : "state", score: up.length ? up.length + grow - 1 : null, growth_rank: null,
       series: { y: Y, p, wc, eq, lic: Y.map(() => 1 + (i % 3 === 0)), up, full: 2025 } }); }
-  for (const c of ["Orange", "Collier"]) hist.filter(h => h.county === c && h.score).sort((a, b) => b.score - a.score).forEach((h, k) => h.growth_rank = k + 1);
+  for (const t of ["hvac","plumbing","electrical","roofing"]) for (const c of ["Orange", "Collier"]) hist.filter(h => h.county === c && h.trade === t && h.score).sort((a, b) => b.score - a.score).forEach((h, k) => h.growth_rank = k + 1);
   hist.sort((a, b) => (a.growth_rank || 1e9) - (b.growth_rank || 1e9));
   const q = (rows) => { const o = { rows, eq(k, v) { o.rows = o.rows.filter(x => x[k] === v); return o; }, order() { return o; }, limit() { return Promise.resolve({ data: o.rows }); },
     range() { return Promise.resolve({ data: o.rows }); }, in(k, v) { o.rows = o.rows.filter(x => v.includes(x[k])); return o; }, maybeSingle() { return Promise.resolve({ data: o.rows[0] }); }, select() { return o; }, then(f) { return Promise.resolve({ data: o.rows }).then(f); },
@@ -65,4 +65,4 @@
   window.TC_CONFIG = {};
 })();
 </script>
-<script src="../assets/portal.js?v=7b1"></script></body></html>
+<script src="../assets/portal.js?v=8"></script></body></html>
