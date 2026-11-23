@@ -7,32 +7,97 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <link rel="stylesheet" href="assets/tc.css">
-<link rel="stylesheet" href="assets/portal.css?v=7b1"></head><body>
+<link rel="stylesheet" href="assets/portal.css?v=7b2"></head><body>
 <section class="gate" id="signin" hidden>
-  <div>
+ <div class="g-hero">
+  <div class="g-wrap g-top">
     <a class="mark" href="news/"><i><b></b><b></b><b></b><b></b></i>Tradecount</a>
-    <h1>The growth record for every Florida trade firm</h1>
-    <p class="dek">Built for the people who buy and supply HVAC, plumbing, electrical and roofing contractors. See who is growing, how big they really are, and where they work, from public records most people never pull.</p>
-    <div class="who2">
-      <div><h2>For acquirers</h2><p>PE roll-ups and searchers. Rank firms by five years of growth and build a call list before a broker sends the deal around.</p></div>
-      <div><h2>For distributors</h2><p>Equipment and supply sales teams. Find the firms installing the most, where they work, and who is adding crews.</p></div>
-    </div>
-    <ul class="what">
-      <li><b>Five-year record</b><span>Licenses, workers' comp work sites and equipment on the county tax roll, year by year</span></li>
-      <li><b>Permits</b><span>Matched to the license that pulled them, where the county publishes a free file</span></li>
-      <li><b>Change feed</b><span>Firms that moved up, slowed down or opened, every month</span></li>
-      <li><b>Call First and watchlists</b><span>The fastest growers flagged, and the firms you follow in one place</span></li>
-      <li><b>Coverage</b><span>4 trades in 13 Florida counties, with match quality graded on every firm</span></li>
-    </ul>
-    <div class="ctas"><a class="btn" href="preview/portal.html">See the demo map</a><a class="btn quiet" href="news/access.html">Request access</a></div>
+    <a class="g-in" href="#signin-card">Sign in</a>
   </div>
-  <aside class="card">
-    <h2>Sign in</h2>
-    <p>For approved accounts. We'll email you a one-time link, so there's no password to remember.</p>
-    <form id="sform"><label class="visually-hidden" for="email">Work email</label><input id="email" type="email" required placeholder="you@company.com" autocomplete="email"><button class="btn">Email me a sign-in link</button></form>
-    <p class="note" id="sent" role="status"></p>
-    <p class="alt">No account yet? <a href="preview/portal.html">Try the demo</a> with made-up firms, or <a href="news/access.html">request access</a>.</p>
-  </aside>
+  <div class="g-wrap g-lead">
+    <div class="g-copy">
+      <p class="g-eye">Florida HVAC, plumbing, electrical and roofing</p>
+      <h1>The growth record for every Florida trade firm</h1>
+      <p class="dek">Built for the people who buy and supply contractors. See who is growing, how big they really are and where they work, from five years of public records most people never pull.</p>
+      <div class="g-paths">
+        <a class="path" href="preview/portal.html#l=buy" style="--c:var(--hvac)"><b>I buy trade firms</b><span>Rank owners by five-year growth and build a call list before a broker sends the deal around.</span><em>Open the acquirer demo</em></a>
+        <a class="path" href="preview/portal.html#l=supply" style="--c:var(--plumbing)"><b>I supply trade firms</b><span>Find the firms installing the most, where they work and who is adding crews.</span><em>Open the distributor demo</em></a>
+      </div>
+      <p class="g-risk">The demo opens right away with made-up firms. No email, no card.</p>
+    </div>
+    <aside class="card" id="signin-card">
+      <h2>Sign in</h2>
+      <p>For approved accounts. We'll email you a one-time link, so there's no password.</p>
+      <form id="sform"><label class="visually-hidden" for="email">Work email</label><input id="email" type="email" required placeholder="you@company.com" autocomplete="email"><button class="btn">Email me a sign-in link</button></form>
+      <p class="note" id="sent" role="status"></p>
+      <p class="alt">No account yet? <a href="news/access.html">Request access</a> for your counties.</p>
+    </aside>
+  </div>
+  <figure class="g-wrap g-shot"><div class="frame"><img src="assets/demo-portal.jpg?v=1" alt="The Tradecount demo: HVAC firms in Orange County ranked by five-year growth, each with its trend and growth rate, beside one firm's year-by-year record" width="1389" height="868"></div>
+    <figcaption>Demo with made-up firms. Signed-in accounts see the real record for their counties.</figcaption></figure>
+ </div>
+
+ <div class="g-wrap">
+  <dl class="proof">
+    <div><dt>13</dt><dd>Florida counties, from Miami-Dade to Duval</dd></div>
+    <div><dt>4</dt><dd>trades, each on its own tab</dd></div>
+    <div><dt>5 yrs</dt><dd>of licenses, comp sites and equipment per firm</dd></div>
+    <div><dt>3</dt><dd>free permit files matched to the license that pulled them</dd></div>
+  </dl>
+
+  <section class="g-sec g-prob">
+    <h2>A trade firm's size is hard to see from the outside</h2>
+    <p>Most HVAC, plumbing, electrical and roofing shops are private, have no website worth reading and never publish revenue. Brokers show you a firm once it is for sale. Lead lists tell you a firm exists, not whether it is growing.</p>
+    <p>The public record already shows growth: more work sites on a workers' comp policy, more equipment on the county tax roll, more licenses, more permits. It is spread across five state and county systems. Tradecount pulls it into one record per firm.</p>
+  </section>
+
+  <section class="g-sec">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Pick a trade and a county</b><span>Every licensed firm in that trade, ranked, with match quality graded on each one.</span></li>
+      <li><b>Rank by five-year growth or the last 12 months</b><span>Growth shows who is getting bigger. The last 12 months shows who holds the work now and where.</span></li>
+      <li><b>Follow the firms that matter</b><span>Call First flags the fastest growers. The change feed and your watchlist show when a firm moves.</span></li>
+    </ol>
+  </section>
+
+  <section class="g-sec g-two">
+    <div class="seg-card" style="--c:var(--hvac)"><p class="g-eye">For acquirers</p><h3>Meet the owner before the banker does</h3>
+      <ul><li>Five-year growth ranking for every licensed firm in your counties</li><li>Call First list of the fastest growers on the record</li><li>Firm profiles with comp sites, equipment and licenses by year</li><li>A watchlist of up to 100 targets you follow</li></ul>
+      <a class="btn" href="preview/portal.html#l=buy">Open the acquirer demo</a></div>
+    <div class="seg-card" style="--c:var(--plumbing)"><p class="g-eye">For distributors</p><h3>Win the accounts that are adding crews</h3>
+      <ul><li>Who pulled the most permits in the last 12 months, by trade</li><li>Each firm's busiest ZIPs on the map, to plan territories</li><li>Top-10 share to see how spread out each market is</li><li>A monthly change feed of firms that rose, slowed or opened</li></ul>
+      <a class="btn" href="preview/portal.html#l=supply">Open the distributor demo</a></div>
+  </section>
+
+  <section class="g-sec">
+    <h2>What's in each firm's record</h2>
+    <ul class="what">
+      <li><b>Licenses</b><span>Every Florida trade license tied to the firm, and when it was first issued</span></li>
+      <li><b>Workers' comp sites</b><span>Work locations on the firm's policy, year by year</span></li>
+      <li><b>Equipment</b><span>Value on the county tangible property roll, year by year</span></li>
+      <li><b>Permits</b><span>Matched to the license that pulled them, in Orlando, Miami-Dade County and Cape Coral</span></li>
+      <li><b>Where it works</b><span>The firm's busiest ZIPs on the map, where permits are on file</span></li>
+      <li><b>Match grade</b><span>How sure we are that the records belong to this firm</span></li>
+    </ul>
+  </section>
+
+  <section class="g-sec">
+    <h2>Questions buyers ask</h2>
+    <div class="faq">
+      <details><summary>Is this a list of firms for sale?</summary><p>No. It shows growth and activity from the public record. Nothing in it predicts a sale, and we don't broker deals.</p></details>
+      <details><summary>Where does the data come from?</summary><p>Florida DBPR licenses, Florida workers' comp policies, the Florida tangible property tax roll, company filings and county or city permit files where they are free.</p></details>
+      <details><summary>Which counties have permits?</summary><p>Orlando, Miami-Dade County and Cape Coral today. The other ten counties show the five-year state record, and each page says which you are looking at.</p></details>
+      <details><summary>Can I export it?</summary><p>You can download your watchlist of up to 100 firms as a CSV. The full map stays in the portal and is watermarked with your email.</p></details>
+      <details><summary>Who can sign in?</summary><p>Approved accounts only, by emailed link. Request access and tell us your trades and counties.</p></details>
+    </div>
+  </section>
+
+  <section class="g-end">
+    <h2>See who is growing in your counties</h2>
+    <div class="ctas"><a class="btn" href="preview/portal.html">Open the demo map</a><a class="btn quiet" href="news/access.html">Request access</a></div>
+  </section>
+  <p class="g-foot"><a href="news/">Tradecount news</a> · <a href="news/how-we-count.html">How we count</a> · Growth and activity only. Nothing here predicts a sale.</p>
+ </div>
 </section>
 <div id="app" hidden>
 <div class="top"><div class="wrap">
