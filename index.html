@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tradecount portal</title><meta name="robots" content="noindex">
+<title>Tradecount: the growth record for every Florida trade firm</title><meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -7,13 +7,32 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 <link rel="stylesheet" href="assets/tc.css">
-<link rel="stylesheet" href="assets/portal.css?v=5y1"></head><body>
-<section class="signin" id="signin" hidden>
-  <a class="mark" href="news/"><i><b></b><b></b><b></b><b></b></i>Tradecount</a>
-  <h1>Sign in to the map</h1>
-  <p>We'll email you a one-time sign-in link. Access is for approved accounts.</p>
-  <form id="sform"><input id="email" type="email" required placeholder="Work email" aria-label="Work email"><button class="btn">Email me a link</button></form>
-  <p class="note" id="sent" role="status"></p>
+<link rel="stylesheet" href="assets/portal.css?v=6a1"></head><body>
+<section class="gate" id="signin" hidden>
+  <div>
+    <a class="mark" href="news/"><i><b></b><b></b><b></b><b></b></i>Tradecount</a>
+    <h1>The growth record for every Florida trade firm</h1>
+    <p class="dek">Built for the people who buy and supply HVAC, plumbing, electrical and roofing contractors. See who is growing, how big they really are, and where they work, from public records most people never pull.</p>
+    <div class="who2">
+      <div><h2>For acquirers</h2><p>PE roll-ups and searchers. Rank firms by five years of growth and build a call list before a broker sends the deal around.</p></div>
+      <div><h2>For distributors</h2><p>Equipment and supply sales teams. Find the firms installing the most, where they work, and who is adding crews.</p></div>
+    </div>
+    <ul class="what">
+      <li><b>Five-year record</b><span>Licenses, workers' comp work sites and equipment on the county tax roll, year by year</span></li>
+      <li><b>Permits</b><span>Matched to the license that pulled them, where the county publishes a free file</span></li>
+      <li><b>Change feed</b><span>Firms that moved up, slowed down or opened, every month</span></li>
+      <li><b>Call First and watchlists</b><span>The fastest growers flagged, and the firms you follow in one place</span></li>
+      <li><b>Coverage</b><span>4 trades in 13 Florida counties, with match quality graded on every firm</span></li>
+    </ul>
+    <div class="ctas"><a class="btn" href="preview/portal.html">See the demo map</a><a class="btn quiet" href="news/access.html">Request access</a></div>
+  </div>
+  <aside class="card">
+    <h2>Sign in</h2>
+    <p>For approved accounts. We'll email you a one-time link, so there's no password to remember.</p>
+    <form id="sform"><label class="visually-hidden" for="email">Work email</label><input id="email" type="email" required placeholder="you@company.com" autocomplete="email"><button class="btn">Email me a sign-in link</button></form>
+    <p class="note" id="sent" role="status"></p>
+    <p class="alt">No account yet? <a href="preview/portal.html">Try the demo</a> with made-up firms, or <a href="news/access.html">request access</a>.</p>
+  </aside>
 </section>
 <div id="app" hidden>
 <div class="top"><div class="wrap">
@@ -21,7 +40,8 @@
   <nav class="tabs" role="tablist" aria-label="Trades" id="tabs"></nav>
   <span class="who"><span id="me"></span> <a href="#" id="out">Sign out</a></span>
 </div></div>
+<div id="welcome" hidden></div>
 <main class="wrap" id="main"></main>
 </div>
 <div id="wm" aria-hidden="true"></div>
-<script src="assets/portal.js?v=5y1"></script></body></html>
+<script src="assets/portal.js?v=6a1"></script></body></html>

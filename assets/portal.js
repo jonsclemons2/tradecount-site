@@ -10,7 +10,17 @@ const COV_STATE = "State records only: workers' comp sites, equipment on the tax
 const GRADE = { permits: ["Permit history", "Permits and state records for most years"], state: ["State records", "Workers' comp or equipment on file for three years or more"], thin: ["Thin record", "Little on file beyond the license"] };
 const GROWTH_TRADES = new Set(["hvac"]);
 const UNIT = { hvac: "change-outs", plumbing: "plumbing permits", electrical: "electrical permits", roofing: "roofing permits" };
-let me, counties = [], county, trade = "hvac", cache = {}, hist = {}, feed = [], watch = new Set(), sel = null, map, pins, area, view = "growth", q = "";
+let me, counties = [], county, trade = "hvac", cache = {}, hist = {}, feed = [], watch = new Set(), sel = null, map, pins, area, view = "growth", q = "", cfOnly = false;
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+let lens = store.get("tc_lens"); // "buy" (acquirers), "supply" (distributors) or null
+const PURPOSE = {
+  growth: { buy: "Firms getting bigger on the public record over five years. Start at the top to build your call list of owners worth meeting.",
+    supply: "Firms adding crews, sites and equipment over five years. These are the accounts to win before a competitor does.",
+    none: "Who is getting bigger over five years. Acquirers use it to build a call list. Distributors use it to find accounts that are adding crews." },
+  year: { buy: "Who holds the work right now and where. The top-10 share shows how spread out this market is, and Call First flags firms growing fastest.",
+    supply: "Who installs the most right now and where they work. Size each account by its permits and see its busiest ZIPs on the map.",
+    none: "Who does the most work right now and where. Distributors use it to size accounts and territories. Acquirers use it to see who holds the market." } };
+const purpose = v => `<p class="purpose">${PURPOSE[v][lens || "none"]}</p>`;
 const TL = t => ({ hvac: "HVAC", mechanical: "Mechanical", plumbing: "Plumbing", electrical: "Electrical", roofing: "Roofing", building: "Building", general: "General" }[t] || t[0].toUpperCase() + t.slice(1));
 const fmt = n => (+n || 0).toLocaleString("en-US");
 const n0 = c => c.card.n0 ?? +c.card.facts[0].v, n1 = c => c.card.n1 ?? +c.card.facts[1].v;
@@ -34,8 +44,26 @@ async function start() {
   if (!counties.length) { $("#main").innerHTML = '<p class="empty">Your account has no counties yet. Ask Tradecount to add one.</p>'; return; }
   county = counties[0];
   const h = new URLSearchParams(location.hash.slice(1)); if (h.get("t")) trade = h.get("t"); if (counties.includes(h.get("c"))) county = h.get("c"); if (h.get("v")) view = h.get("v");
-  tabs(); show();
+  else if (lens === "supply" && COV[county]) view = "year";
+  tabs(); welcome(); show();
 }
+function welcome() {
+  const w = $("#welcome"); if (!w || store.get("tc_welcome")) return;
+  w.innerHTML = `<div class="wrap"><div class="wl"><p class="eyebrow">Welcome to Tradecount</p>
+    <h2>The growth record for every Florida trade firm, built for the people who buy and supply them.</h2>
+    <p>Four trades, ${counties.length === 1 ? "your county" : counties.length + " counties"} on your account. Every firm's licenses, workers' comp sites and equipment on the tax roll, year by year, plus permits where the county publishes them.</p></div>
+    <div class="wr"><p class="ask">What are you here to do?</p>
+    <button class="choice" data-l="buy"><b>Find firms to buy</b><span>Rank who is growing over five years and build a call list.</span></button>
+    <button class="choice" data-l="supply"><b>Find accounts to supply</b><span>See who does the most work, where, and who is adding crews.</span></button>
+    <button class="skip" data-l="">Just show me the map</button></div></div>`;
+  w.hidden = false;
+  w.querySelectorAll("button").forEach(b => b.onclick = () => { lens = b.dataset.l || null; if (lens) store.set("tc_lens", lens); store.set("tc_welcome", "1");
+    w.hidden = true; view = lens === "supply" && COV[county] ? "year" : "growth"; sel = null; show(); });
+}
+function lensSwitch() {
+  return `<label class="lens">Using it to<select id="lens" aria-label="What you use Tradecount for"><option value="">Both</option><option value="buy"${lens === "buy" ? " selected" : ""}>Buy firms</option><option value="supply"${lens === "supply" ? " selected" : ""}>Supply firms</option></select></label>`;
+}
+function wireLens() { const l = $("#lens"); if (l) l.onchange = e => { lens = e.target.value || null; store.set("tc_lens", lens || ""); show(); }; }
 function tabs() {
   $("#tabs").innerHTML = TRADES.map(([k, l, c]) => `<button role="tab" data-t="${k}" style="--c:${c}" aria-selected="${trade === k}"><i></i>${l}</button>`).join("")
     + `<button role="tab" data-t="watch" style="--c:#9AA6B2" aria-selected="${trade === "watch"}"><i></i>Watchlist <small>${watch.size}</small></button>`;
@@ -57,9 +85,10 @@ async function show() {
     <div><dt>${UNIT[trade][0].toUpperCase() + UNIT[trade].slice(1)}, last 12 months</dt><dd>${ar ? fmt(ar.permits0) : "n/a"}</dd></div>
     <div><dt>Against the year before</dt><dd>${ar && ar.permits1 ? (ar.permits0 >= ar.permits1 ? "+" : "−") + Math.abs(Math.round(100 * (ar.permits0 - ar.permits1) / ar.permits1)) + "%" : "n/a"}</dd></div>
     <div><dt>Share held by the top 10</dt><dd>${ar ? Math.round(100 * cs.slice(0, 10).reduce((s, c) => s + n0(c), 0) / Math.max(ar.permits0, 1)) + "%" : "n/a"}</dd></div></dl>` : ""}</div>
+    <div class="intro">${purpose("year")}${lensSwitch()}</div>
     ${cs.length ? `<div class="grid">
       <section class="panel"><div class="ph"><h2>Where they work</h2><span id="mapnote">Each pin is a firm's busiest ZIP. Bigger pins pulled more permits.</span></div><div id="map"></div></section>
-      <section class="panel"><div class="ph"><h2>Top firms by ${UNIT[trade]}</h2><span>Last 12 months against the year before</span></div>
+      <section class="panel"><div class="ph"><h2>Top firms by ${UNIT[trade]}</h2><button class="chip" id="cfonly" aria-pressed="${cfOnly}" title="Firms growing fastest on the public record">Call First only</button></div>
         <div class="listwrap"><table class="rank"><thead><tr><th></th><th>Firm</th><th>Last 12 mo</th><th>Prior vs now</th><th>Change</th></tr></thead><tbody id="rows"></tbody></table></div></section>
     </div>
     <div class="lower">
@@ -67,11 +96,15 @@ async function show() {
       <section class="panel"><div class="ph"><h2>Firm profile</h2><span>Pick a firm on the map or the list</span></div><div class="plate" id="plate"><span class="r1"></span><span class="r2"></span></div></section>
     </div>
     <p class="note">${esc(SRC[county])} and Florida state records, as of ${esc(cs[0].as_of)}. Rankings count permits each firm's license pulled from Dec 2025 to Nov 2026. Growth and activity only; nothing here predicts a sale.</p>`
-    : `<section class="panel"><p class="empty">${GROWTH_TRADES.has(trade) ? `The last-12-months view needs a free permit file, and ${esc(AREA[county])} doesn't publish one. Switch to Five-year growth for this county.` : `${label} data for ${esc(AREA[county] || county)} is still loading. HVAC is ready now.`}</p></section>`}`;
-  $("#cty").onchange = e => { county = e.target.value; sel = null; show(); }; wireToggle();
+    : `<section class="panel"><div class="empty">${GROWTH_TRADES.has(trade) ? `<p>The last-12-months view needs a free permit file, and ${esc(AREA[county])} doesn't publish one that names the contractor.</p><button class="btn" id="go5">See five-year growth for ${esc(AREA[county])}</button>` : `<p>${label} for ${esc(AREA[county] || county)} is still being matched to licenses. HVAC is ready now.</p><button class="btn" id="goH">Open HVAC</button>`}</div></section>`}`;
+  $("#cty").onchange = e => { county = e.target.value; sel = null; show(); }; wireToggle(); wireLens();
+  if ($("#go5")) $("#go5").onclick = () => { view = "growth"; show(); };
+  if ($("#goH")) $("#goH").onclick = () => { trade = "hvac"; tabs(); show(); };
   if (!cs.length) return;
+  $("#cfonly").onclick = () => { cfOnly = !cfOnly; show(); };
   const mx = Math.max(...cs.map(n0));
-  $("#rows").innerHTML = cs.slice(0, 100).map(c => { const p = pct(c), a = n0(c), b = n1(c), m = Math.max(a, b, 1);
+  const shown = cfOnly ? cs.filter(c => c.card.call_first).sort((a, b) => a.card.call_first - b.card.call_first) : cs;
+  $("#rows").innerHTML = !shown.length ? '<tr><td></td><td colspan="4" class="dn">No firm is on the Call First list here this month.</td></tr>' : shown.slice(0, 100).map(c => { const p = pct(c), a = n0(c), b = n1(c), m = Math.max(a, b, 1);
     return `<tr data-id="${c.firm_id}"><td>${c.rank}</td><td>${esc(c.name)}${c.card.call_first ? '<span class="cf" title="Growing fastest on the public record">Call First</span>' : ""}</td><td>${fmt(a)}</td>
     <td><span class="bars" title="${fmt(b)} then, ${fmt(a)} now"><b style="width:${100 * b / m}%"></b><b style="width:${100 * a / m}%"></b></span></td>
     <td class="${p === null || p >= 0 ? "up" : "dn"}">${p === null ? "New" : (p >= 0 ? "+" : "−") + Math.abs(p) + "%"}</td></tr>`; }).join("");
@@ -175,6 +208,7 @@ async function showGrowth() {
   $("#main").innerHTML = `<div class="head"><h1>${label} in<select id="cty" aria-label="County">${opts}</select></h1>${toggle_()}
     <dl class="facts"><div><dt>Licensed ${label} firms</dt><dd>${fmt(hs.length)}</dd></div><div><dt>With a five-year record</dt><dd>${fmt(withRec)}</dd></div>
     <div><dt>Growing on the record</dt><dd>${fmt(ranked.length)}</dd></div><div><dt>What we can see here</dt><dd class="cov ${hasP ? "p" : ""}">${hasP ? "Permits and state records" : "State records only"}</dd></div></dl></div>
+    <div class="intro">${purpose("growth")}${lensSwitch()}</div>
     <p class="covnote">${esc(COV[county] || COV_STATE)}</p>
     <div class="lower g5">
       <section class="panel"><div class="ph"><h2>Fastest growing, ${y0} to now</h2><input id="find" type="search" placeholder="Find any ${label} firm" aria-label="Find a firm" value="${esc(q)}"></div>
@@ -182,7 +216,7 @@ async function showGrowth() {
       <section class="panel"><div class="ph"><h2>Five-year record</h2><span>Pick a firm on the list</span></div><div class="plate" id="plate"><span class="r1"></span><span class="r2"></span></div></section>
     </div>
     <p class="note">Ranked by how many signals grew from ${y0} to now and by how much: ${hasP ? "permits pulled (full years), " : ""}workers' comp work sites and equipment on the county tax roll. A firm needs real size to rank: ${hasP ? "20 or more permits in its last full year, " : ""}2 or more comp sites, or $50k or more in equipment. Florida DBPR licenses, FL workers' comp, FL DOR tangible property roll${hasP ? ", " + esc(SRC[county]) : ""}. Growth and activity only; nothing here predicts a sale.</p>`;
-  $("#cty").onchange = e => { county = e.target.value; sel = null; q = ""; show(); }; wireToggle();
+  $("#cty").onchange = e => { county = e.target.value; sel = null; q = ""; show(); }; wireToggle(); wireLens();
   const draw = () => {
     const term = q.trim().toUpperCase(), list = term ? hs.filter(h => h.name.toUpperCase().includes(term)).slice(0, 100) : ranked.slice(0, 100);
     $("#rows").innerHTML = list.length ? list.map(h => { const [a, b] = lead(h), g = GRADE[h.coverage];

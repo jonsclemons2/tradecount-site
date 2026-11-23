@@ -100,3 +100,59 @@ body[data-trade=plumbing]{--trade:var(--plumbing)} body[data-trade=electrical]{-
 .tl .v{font:600 10px var(--body);fill:#1F2A35;text-anchor:middle} .tl .yr{font:400 9.5px var(--body);fill:var(--ink-3);text-anchor:middle}
 .tl .nil{stroke:#A9B1B5;stroke-width:1.5;stroke-dasharray:2 3}
 .tl .none{font-size:12.5px;color:var(--ink-3);margin:6px 0 14px;min-height:52px}
+
+/* Nov 23 conversion pass: purpose line, segment lens, welcome, Call First filter, phone fixes */
+.intro{display:flex;align-items:flex-start;justify-content:space-between;gap:16px 24px;margin:-4px 0 16px;flex-wrap:wrap}
+.purpose{margin:0;font-size:15px;line-height:1.5;color:var(--ink);max-width:68ch}
+.lens{font-size:13px;color:var(--ink-2);white-space:nowrap}
+.lens select{font:500 13px var(--body);padding:5px 8px;border:1px solid var(--plate-edge);border-radius:6px;background:var(--white);margin-left:8px}
+.chip{all:unset;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-2);border:1px solid var(--plate-edge);border-radius:999px;padding:4px 11px}
+.chip[aria-pressed=true]{color:#fff;background:var(--trade);border-color:var(--trade)}
+.chip:focus-visible{outline:2px solid var(--trade);outline-offset:2px}
+div.empty p{margin:0 0 14px}
+#welcome{background:var(--white);border-bottom:1px solid var(--line)}
+#welcome .wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px 48px;padding-top:28px;padding-bottom:28px}
+@media (max-width:900px){#welcome .wrap{grid-template-columns:1fr}}
+#welcome .eyebrow{font-size:13px;font-weight:600;color:var(--ink-3);margin:0 0 8px}
+#welcome h2{font-family:var(--display);font-stretch:78%;font-weight:700;font-size:clamp(24px,3vw,34px);line-height:1.05;margin:0 0 12px;max-width:24ch}
+#welcome .wl p:last-child{margin:0;color:var(--ink-2);max-width:56ch}
+#welcome .ask{font-weight:600;margin:0 0 10px}
+.choice{all:unset;box-sizing:border-box;cursor:pointer;display:block;width:100%;border:1px solid var(--line);border-left:4px solid var(--ink);border-radius:8px;padding:12px 14px;margin:0 0 8px;background:var(--paper)}
+.choice:hover{border-color:var(--plate-edge);border-left-color:var(--trade)}
+.choice:focus-visible{outline:2px solid var(--trade);outline-offset:2px}
+.choice b{display:block;font-size:15px}.choice span{display:block;font-size:13.5px;color:var(--ink-2);margin-top:2px}
+.skip{all:unset;cursor:pointer;font-size:13.5px;color:var(--ink-2);text-decoration:underline;margin-top:2px}
+@media (max-width:980px){.g5{grid-template-columns:1fr}}
+@media (max-width:560px){
+  .grow th:nth-child(3),.grow td:nth-child(3){display:none}
+  .rank:not(.grow) th:nth-child(4),.rank:not(.grow) td:nth-child(4){display:none}
+  .facts{gap:14px 22px}.facts dd{font-size:19px}
+  .head h1{font-size:30px}.head select{margin:8px 0 0;display:block;vertical-align:0}
+  .tabs button{padding:0 10px}
+  .top .mark{font-size:0;gap:0}
+  #find{flex:1 1 100%}
+  .lens{white-space:normal}
+}
+
+/* Sign-in page */
+.gate{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:56px;max-width:1120px;margin:0 auto;padding:56px 24px;align-items:start}
+@media (max-width:900px){.gate{grid-template-columns:1fr;gap:32px;padding:32px 16px}}
+.gate .mark{color:var(--ink)}
+.gate h1{font-family:var(--display);font-stretch:72%;font-weight:700;font-size:clamp(38px,5.4vw,62px);line-height:.98;letter-spacing:-.015em;margin:28px 0 16px;max-width:16ch}
+.gate .dek{font-size:18px;line-height:1.5;color:var(--ink-2);margin:0 0 28px;max-width:36em}
+.who2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0 0 28px}
+@media (max-width:560px){.who2{grid-template-columns:1fr}}
+.who2 div{border-top:3px solid var(--ink);padding-top:12px}
+.who2 h2{font-size:15px;margin:0 0 4px}.who2 p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.what{list-style:none;padding:0;margin:0 0 28px;font-size:14.5px}
+.what li{padding:9px 0;border-top:1px solid var(--line);display:flex;gap:12px}
+.what li b{min-width:9.5em}
+.gate .ctas{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:26px 24px;position:sticky;top:24px}
+.card h2{font-family:var(--display);font-stretch:85%;font-size:24px;margin:0 0 6px}
+.card p{color:var(--ink-2);font-size:14.5px;margin:0}
+.card form{display:flex;flex-direction:column;gap:8px;margin-top:16px}
+.card input{font:400 15px var(--body);padding:11px 12px;border:1px solid var(--plate-edge);border-radius:6px}
+.card .note{margin:12px 0 0}
+.card .alt{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);font-size:14px}
+.visually-hidden{position:absolute;left:-9999px}
