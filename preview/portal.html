@@ -1,0 +1,55 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tradecount portal demo</title><meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="../assets/tc.css"><link rel="stylesheet" href="../assets/portal.css">
+<style>.demo{background:#FFF4D6;color:#5A4500;font-size:13px;text-align:center;padding:6px 12px;position:relative;z-index:1200}</style>
+</head><body>
+<div class="demo">Demo with made-up firms and numbers. The live portal shows real permits after sign-in.</div>
+<section class="signin" id="signin" hidden></section>
+<div id="app" hidden>
+<div class="top"><div class="wrap">
+  <a class="mark" href="../news/"><i><b></b><b></b><b></b><b></b></i>Tradecount</a>
+  <nav class="tabs" role="tablist" aria-label="Trades" id="tabs"></nav>
+  <span class="who"><span id="me"></span> <a href="#" id="out">Sign out</a></span>
+</div></div>
+<main class="wrap" id="main"></main>
+</div>
+<div id="wm" aria-hidden="true"></div>
+<form id="sform" hidden><input id="email"></form><p id="sent" hidden></p>
+<script>
+// Stand-in for the database: same shapes the live portal reads, filled with invented firms.
+(function () {
+  let s = 7; const r = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  const A = ["Sunbelt","Lakeshore","Bayline","Coquina","Palmetto","Gulfstream","Keystone","Harbor","Seminole","Citrus","Tidewater","Banyan","Crescent","Pineland","Osprey","Marlin","Heron","Cypress","Sandpiper","Manatee","Orchid","Saltwater","Everglade","Brightwater","Royal Palm"];
+  const S = { hvac: ["Air Services","Air & Heat","Cooling","Comfort Systems","Mechanical"], plumbing: ["Plumbing","Pipe & Drain","Plumbing Co","Rooter & Plumbing","Water Works"], electrical: ["Electric","Electrical Contractors","Power & Light","Electric Co","Wiring"] };
+  const Z = { Orange: [[28.54,-81.38,"32801"],[28.6,-81.29,"32817"],[28.47,-81.45,"32839"],[28.43,-81.31,"32822"],[28.58,-81.47,"32808"],[28.5,-81.2,"32829"],[28.66,-81.36,"32810"],[28.45,-81.48,"32819"]],
+              "Miami-Dade": [[25.77,-80.2,"33130"],[25.83,-80.27,"33142"],[25.69,-80.36,"33183"],[25.87,-80.21,"33150"],[25.74,-80.3,"33155"],[25.94,-80.24,"33169"],[25.61,-80.4,"33157"],[25.79,-80.38,"33172"]] };
+  const cards = [], feed = []; let id = 1;
+  for (const t of ["hvac","plumbing","electrical"]) for (const county of ["Orange","Miami-Dade"]) {
+    const rows = []; for (let i = 0; i < 60; i++) { const n0 = Math.round(420 * Math.pow(.93, i) * (.7 + .6 * r())) + 4, n1 = Math.round(n0 * (.6 + .7 * r()));
+      rows.push({ name: A[(i * 7 + (t.length)) % A.length] + " " + S[t][i % 5] + (i >= 25 ? " " + (i - 24) : ""), n0, n1 }); }
+    rows.sort((a, b) => b.n0 - a.n0); const tot0 = rows.reduce((x, y) => x + y.n0, 0) * 1.6, tot1 = rows.reduce((x, y) => x + y.n1, 0) * 1.6;
+    rows.forEach((w, i) => { const zs = Z[county].map(z => [z[2], Math.round(w.n0 * r()) + 1, z[0] + (r() - .5) * .03, z[1] + (r() - .5) * .03]).sort((a, b) => b[1] - a[1]).slice(0, 5);
+      const up = w.n0 > w.n1 * 1.25 && w.n0 > 40, cf = up && i < 40 ? i + 1 : null;
+      cards.push({ firm_id: id, county, trade: t, rank: i + 1, name: w.name, as_of: "2026-11-23", card: {
+        n0: w.n0, n1: w.n1, pin: [zs[0][2], zs[0][3], zs[0][0]], zips: zs, call_first: cf, match_grade: i % 6 ? "high" : "medium",
+        licenses: [(t === "hvac" ? "CAC18" : t === "plumbing" ? "CFC14" : "EC13") + String(10000 + i * 37).slice(0, 5)], trades: i % 4 ? [t] : [t, "mechanical"],
+        why: up ? ["permits up " + Math.round(100 * (w.n0 / w.n1 - 1)) + "% on the prior year", "workers' comp locations 1 to 2 since 2023"] : [],
+        area: { permits0: Math.round(tot0), permits1: Math.round(tot1), firms: 214 + i % 3, unit: "permits" },
+        facts: [{ k: "First license issued", v: String(1988 + (i * 3) % 34) }, { k: "Workers' comp locations in force", v: (1 + i % 3) + " (1 in 2023)" }, { k: "Equipment on tangible property roll", v: "$" + (40000 + i * 9100).toLocaleString() }] } });
+      if (i < 40 && (up || i % 9 === 4)) feed.push({ id: id, county, trade: t, firm_id: id, firm_name: w.name, headline: up ? `Moved up to ${i + 1}st in permits, up ${Math.round(100 * (w.n0 / w.n1 - 1))}%`.replace(/(\d)st/, (m, d) => d + ({1:"st",2:"nd",3:"rd"}[d] || "th")) : `Permits down ${Math.round(100 * (1 - w.n0 / w.n1)) || 8}% on the prior year` });
+      id++; });
+  }
+  const watch = [{ firm_id: 3 }, { firm_id: 65 }];
+  const q = (rows) => { const o = { rows, eq(k, v) { o.rows = o.rows.filter(x => x[k] === v); return o; }, order() { return o; }, limit() { return Promise.resolve({ data: o.rows }); },
+    maybeSingle() { return Promise.resolve({ data: o.rows[0] }); }, select() { return o; }, then(f) { return Promise.resolve({ data: o.rows }).then(f); },
+    insert(x) { watch.push(x); return Promise.resolve({}); }, delete() { return { eq(k, v) { watch.splice(watch.findIndex(w => w.firm_id === v), 1); return Promise.resolve({}); } }; } }; return o; };
+  window.supabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: "demo", email: "demo@tradecount" } } } }), signOut: async () => {}, signInWithOtp: async () => ({}) },
+    from: t => q(t === "tc_account" ? [{ counties: ["Orange", "Miami-Dade"] }] : t === "tc_firm_card" ? cards.slice() : t === "tc_change_feed" ? feed : watch) }) };
+  window.TC_CONFIG = {};
+})();
+</script>
+<script src="../assets/portal.js"></script></body></html>
