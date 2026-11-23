@@ -7,7 +7,7 @@ const COV = { "Orange": "City of Orlando permits since 2021, plus state records.
   "Miami-Dade": "Miami-Dade County permits since 2021, plus state records. Cities that issue their own permits, such as Miami, aren't included.",
   "Lee": "City of Cape Coral permits since 2021, plus state records. Fort Myers and unincorporated Lee County aren't in the free file." };
 const COV_STATE = "State records only: workers' comp sites, equipment on the tax roll and licenses. This county publishes no free permit file that names the contractor.";
-const GRADE = { permits: ["Permit history", "Permits and state records for most years"], state: ["State records", "Workers' comp or equipment on file for three years or more"], thin: ["Thin record", "Little on file beyond the license"] };
+const GRADE = { permits: ["Permit history", "Permits in three or more of the last five years"], state: ["State records", "Workers' comp or equipment on file for three years or more"], thin: ["Thin record", "Little on file beyond the license"] };
 const GROWTH_TRADES = new Set(["hvac", "plumbing", "electrical", "roofing"]);
 const UNIT = { hvac: "change-outs", plumbing: "plumbing permits", electrical: "electrical permits", roofing: "roofing permits" };
 let me, counties = [], county, trade = "hvac", cache = {}, hist = {}, feed = [], watch = new Set(), sel = null, map, pins, area, view = "growth", q = "", cfOnly = false;
@@ -218,7 +218,7 @@ async function showGrowth() {
     <dl class="facts"><div><dt>Licensed ${label} firms</dt><dd>${fmt(hs.length)}</dd></div><div><dt>With a five-year record</dt><dd>${fmt(withRec)}</dd></div>
     <div><dt>Growing on the record</dt><dd>${fmt(ranked.length)}</dd></div><div><dt>What we can see here</dt><dd class="cov ${hasP ? "p" : ""}">${hasP ? "Permits and state records" : "State records only"}</dd></div></dl></div>
     <div class="intro">${purpose("growth")}${lensSwitch()}</div>
-    <p class="covnote">${esc(COV[county] || COV_STATE)}${trade === "roofing" ? " Roofers' workers' comp and equipment records aren't matched yet, so roofing shows permits and licenses for now." : ""}</p>
+    <p class="covnote">${esc(COV[county] || COV_STATE)}</p>
     <div class="lower g5">
       <section class="panel"><div class="ph"><h2>Fastest growing, ${y0} to now</h2><input id="find" type="search" placeholder="Find any ${label} firm" aria-label="Find a firm" value="${esc(q)}"></div>
         <div class="listwrap"><table class="rank grow"><thead><tr><th></th><th>Firm and what grew</th><th>Five years</th><th>Growth</th></tr></thead><tbody id="rows"></tbody></table></div></section>
