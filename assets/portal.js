@@ -198,10 +198,10 @@ async function showGrowth() {
 function bars(title, ys, vals, f, full, note) {
   const has = vals && vals.some(v => v), mx = Math.max(1, ...(vals || []).map(v => v || 0)), w = 300 / ys.length;
   if (!has) return `<figure class="tl"><figcaption>${title}</figcaption><p class="none">${note || "None on file"}</p></figure>`;
-  return `<figure class="tl"><figcaption>${title}</figcaption><svg viewBox="0 0 300 92" role="img" aria-label="${esc(title)} by year">${ys.map((y, i) => {
-    const v = vals[i], h = v ? Math.max(2, 58 * v / mx) : 0, x = i * w + 6, part = y > full;
-    return `${v ? `<rect x="${x}" y="${70 - h}" width="${w - 12}" height="${h}" rx="2" class="${part ? "part" : ""}"></rect><text x="${x + (w - 12) / 2}" y="${64 - h}" class="v">${esc(f(v))}</text>`
-      : `<line x1="${x}" x2="${x + w - 12}" y1="70" y2="70" class="nil"></line>`}<text x="${x + (w - 12) / 2}" y="86" class="yr">${y}${part ? "*" : ""}</text>`; }).join("")}</svg></figure>`;
+  return `<figure class="tl"><figcaption>${title}</figcaption><svg viewBox="0 0 300 96" role="img" aria-label="${esc(title)} by year">${ys.map((y, i) => {
+    const v = vals[i], h = v ? Math.max(2, 52 * v / mx) : 0, x = i * w + 6, part = y > full;
+    return `${v ? `<rect x="${x}" y="${74 - h}" width="${w - 12}" height="${h}" rx="2" class="${part ? "part" : ""}"></rect><text x="${x + (w - 12) / 2}" y="${68 - h}" class="v">${esc(f(v))}</text>`
+      : `<line x1="${x}" x2="${x + w - 12}" y1="74" y2="74" class="nil"></line>`}<text x="${x + (w - 12) / 2}" y="90" class="yr">${y}${part ? "*" : ""}</text>`; }).join("")}</svg></figure>`;
 }
 function pickH(id, hs) {
   const h = hs.find(x => x.firm_id === id); if (!h) return; sel = id;
