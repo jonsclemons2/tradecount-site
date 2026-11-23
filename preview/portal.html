@@ -44,11 +44,23 @@
       id++; });
   }
   const watch = [{ firm_id: 3 }, { firm_id: 65 }];
+  // Five-year history, invented: Orange has permits, Collier has state records only.
+  const hist = [], Y = [2021, 2022, 2023, 2024, 2025, 2026];
+  for (const county of ["Orange", "Collier"]) for (let i = 0; i < 90; i++) {
+    const big = r(), grow = .6 + 1.4 * r(), thin = i % 5 === 4, p = county === "Orange" ? Y.map((y, k) => Math.round((20 + 200 * big) * Math.pow(grow, k / 5) * (k === 5 ? .85 : 1))) : null;
+    const wc0 = thin ? null : 1 + Math.floor(3 * big), wc = Y.map((y, k) => thin ? null : Math.max(1, Math.round(wc0 * Math.pow(grow, k / 5))));
+    const eq = Y.map((y, k) => thin || i % 3 === 1 ? null : Math.round((30000 + 400000 * big) * Math.pow(grow, k / 5)));
+    const up = [p && p[4] >= 20 && p[4] > p[0] * 1.1 ? "permits" : null, wc[5] > (wc[0] || 0) && wc[5] >= 2 ? "comp sites" : null, eq[0] && eq[4] >= 50000 && eq[4] > eq[0] * 1.1 ? "equipment" : null].filter(Boolean);
+    hist.push({ firm_id: 500 + hist.length, county, trade: "hvac", name: A[(i * 11) % A.length] + " " + S.hvac[i % 5] + (i >= 25 ? " " + (i - 24) : ""), since: 1990 + (i * 7) % 33,
+      coverage: thin ? "thin" : p ? "permits" : "state", score: up.length ? up.length + grow - 1 : null, growth_rank: null,
+      series: { y: Y, p, wc, eq, lic: Y.map(() => 1 + (i % 3 === 0)), up, full: 2025 } }); }
+  for (const c of ["Orange", "Collier"]) hist.filter(h => h.county === c && h.score).sort((a, b) => b.score - a.score).forEach((h, k) => h.growth_rank = k + 1);
+  hist.sort((a, b) => (a.growth_rank || 1e9) - (b.growth_rank || 1e9));
   const q = (rows) => { const o = { rows, eq(k, v) { o.rows = o.rows.filter(x => x[k] === v); return o; }, order() { return o; }, limit() { return Promise.resolve({ data: o.rows }); },
-    maybeSingle() { return Promise.resolve({ data: o.rows[0] }); }, select() { return o; }, then(f) { return Promise.resolve({ data: o.rows }).then(f); },
+    range() { return Promise.resolve({ data: o.rows }); }, in(k, v) { o.rows = o.rows.filter(x => v.includes(x[k])); return o; }, maybeSingle() { return Promise.resolve({ data: o.rows[0] }); }, select() { return o; }, then(f) { return Promise.resolve({ data: o.rows }).then(f); },
     insert(x) { watch.push(x); return Promise.resolve({}); }, delete() { return { eq(k, v) { watch.splice(watch.findIndex(w => w.firm_id === v), 1); return Promise.resolve({}); } }; } }; return o; };
   window.supabase = { createClient: () => ({ auth: { getSession: async () => ({ data: { session: { user: { id: "demo", email: "demo@tradecount" } } } }), signOut: async () => {}, signInWithOtp: async () => ({}) },
-    from: t => q(t === "tc_account" ? [{ counties: ["Orange", "Miami-Dade"] }] : t === "tc_firm_card" ? cards.slice() : t === "tc_change_feed" ? feed : watch) }) };
+    from: t => q(t === "tc_account" ? [{ counties: ["Orange", "Miami-Dade", "Collier"] }] : t === "tc_firm_history" ? hist.slice() : t === "tc_firm_card" ? cards.slice() : t === "tc_change_feed" ? feed : watch) }) };
   window.TC_CONFIG = {};
 })();
 </script>
