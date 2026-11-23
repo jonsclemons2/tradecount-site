@@ -1,0 +1,24 @@
+/* Tradecount design tokens (preview) */
+:root{
+  --ink:#1C2733; --ink-2:#4A5664; --ink-3:#7A8592;
+  --paper:#F6F7F5; --white:#FFFFFF; --line:#D3D8D9; --plate:#DCE1E2; --plate-edge:#B9C1C4;
+  --hvac:#B5652B; --plumbing:#1F6FB2; --electrical:#C8322B; --roofing:#6E6236;
+  --trade:var(--hvac);
+  --display:"Archivo",system-ui,sans-serif; --body:"Archivo",system-ui,sans-serif; --read:"Newsreader",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 15px/1.5 var(--body);font-variant-numeric:tabular-nums}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--trade);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 24px}
+@media (max-width:640px){.wrap{padding:0 16px}}
+.mark{font-family:var(--display);font-weight:800;font-stretch:118%;letter-spacing:-.01em;font-size:21px;text-decoration:none;display:inline-flex;align-items:center;gap:10px}
+.mark i{display:inline-grid;grid-template-columns:repeat(4,5px);gap:2px}
+.mark i b{width:5px;height:14px;border-radius:1px}
+.mark i b:nth-child(1){background:var(--hvac)}.mark i b:nth-child(2){background:var(--plumbing)}
+.mark i b:nth-child(3){background:var(--electrical)}.mark i b:nth-child(4){background:var(--roofing)}
+.btn{font:600 14px/1 var(--body);border-radius:6px;padding:11px 16px;border:1px solid var(--ink);background:var(--ink);color:#fff;text-decoration:none;display:inline-block;cursor:pointer}
+.btn.quiet{background:transparent;color:var(--ink);border-color:var(--line)}
+.sample{background:#FFF4D6;color:#5A4A12;font-size:13px;text-align:center;padding:6px 12px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
