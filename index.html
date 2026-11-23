@@ -20,11 +20,16 @@ button{background:var(--copper);color:#fff;border:0;border-radius:6px;padding:7p
 button.ghost{background:transparent;color:var(--copper);border:1px solid var(--copper)}
 .pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid currentColor}
 .up{color:var(--green)}.down{color:var(--red)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-#wm{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.07;overflow:hidden;font-size:15px;line-height:70px;color:var(--ink);transform:rotate(-24deg) scale(1.5);white-space:pre}
+#wm{position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.07;overflow:hidden;font-size:15px;line-height:70px;color:var(--ink);transform:rotate(-24deg) scale(1.5);white-space:pre}
 dialog{max-width:620px;width:92vw;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
 .tabs button{background:transparent;color:var(--ink);border:1px solid var(--line)}.tabs button.on{background:var(--copper);color:#fff;border-color:var(--copper)}
+#map{height:420px;border-radius:8px;border:1px solid var(--line)}@media (max-width:640px){#map{height:340px}}
+.lg{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px;vertical-align:middle}
+.leaflet-popup-content{font:13px/1.4 system-ui,sans-serif}
 @media print{body{display:none}}
 </style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
 </head>
@@ -39,6 +44,7 @@ dialog{max-width:620px;width:92vw;border:1px solid var(--line);border-radius:10p
   </section>
   <section id="app" hidden>
     <div class="row tabs" id="tabs" style="margin-bottom:14px"></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Where They Work</h2><span class="small muted"><span class="lg" style="background:#b5652b"></span>Call First<span class="lg" style="background:#3d6f8e"></span>Top 100</span></div><div id="map"></div><p class="small muted" id="mapnote">Each pin sits in the ZIP where the firm pulled the most change-out permits in the last 12 months. Tap a pin for the firm, then Work area to see its other ZIPs.</p></div>
     <div class="card"><h2>What Changed</h2><p class="small muted" id="asof"></p><table id="feed"></table></div>
     <div class="card"><h2>Call First</h2><p class="small muted">Firms growing fastest, with the public records behind each one. Growth only; nothing here predicts a sale.</p><table id="callfirst"></table></div>
     <div class="card"><div class="row" style="justify-content:space-between"><h2>Top Contractors By Change-Outs</h2><span class="small muted">Click a firm for its profile</span></div><table id="top"></table></div>
@@ -83,10 +89,50 @@ async function start() {
   $("#app").hidden = false; render();
 }
 
+let map = null, pins = null, area = null;
+function drawMap(cs) {
+  if (!window.L) { $("#mapnote").textContent = "The map could not load. The tables below have the same firms."; return; }
+  if (!map) {
+    map = L.map("map", { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 16, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    pins = L.layerGroup().addTo(map); area = L.layerGroup().addTo(map);
+  }
+  pins.clearLayers(); area.clearLayers();
+  const pts = [], top = cs.slice(0, 100), seen = {};
+  const max = Math.max(1, ...top.map(x => +fact(x.card, 0) || 0));
+  top.slice().reverse().forEach(x => {
+    const p = x.card.pin; if (!p) return;
+    const k = p[2], n = seen[k] = (seen[k] || 0) + 1, ang = n * 2.4, d = n > 1 ? 0.004 * Math.sqrt(n) : 0;
+    const ll = [p[0] + d * Math.sin(ang), p[1] + d * Math.cos(ang)];
+    const cf = !!x.card.call_first, r = 5 + 9 * Math.sqrt((+fact(x.card, 0) || 0) / max);
+    const m = L.circleMarker(ll, { radius: r, color: "#fff", weight: 1, fillColor: cf ? "#b5652b" : "#3d6f8e", fillOpacity: .85 }).addTo(pins);
+    m.bindPopup(`<b>${esc(x.name)}</b><br>Rank #${x.rank}${cf ? " · Call First #" + x.card.call_first : ""}<br>${esc(fact(x.card, 0))} change-outs, busiest ZIP ${esc(k)}<br><a href="#" data-pid="${x.firm_id}">Profile</a> · <a href="#" data-aid="${x.firm_id}">Work area</a>`);
+    pts.push(ll);
+  });
+  map.off("popupopen").on("popupopen", e => {
+    const el = e.popup.getElement();
+    el.querySelectorAll("[data-pid]").forEach(a => a.onclick = ev => { ev.preventDefault(); profile(+a.dataset.pid); });
+    el.querySelectorAll("[data-aid]").forEach(a => a.onclick = ev => { ev.preventDefault(); workArea(+a.dataset.aid); });
+  });
+  $("#map").hidden = !pts.length;
+  $("#mapnote").textContent = pts.length ? "Each pin sits in the ZIP where the firm pulled the most change-out permits in the last 12 months. Tap a pin for the firm, then Work area to see its other ZIPs." : "No ZIP locations for this area yet. The tables below have the firms.";
+  if (pts.length) { map.invalidateSize(); map.fitBounds(L.latLngBounds(pts).pad(0.08)); }
+}
+function workArea(id) {
+  const x = cards.find(c => c.firm_id === id && c.county === county); if (!x || !x.card.zips) return;
+  area.clearLayers(); map.closePopup();
+  const mx = Math.max(...x.card.zips.map(z => z[1]));
+  x.card.zips.forEach(([z, n, la, lo]) => L.circle([la, lo], { radius: 700 + 1800 * Math.sqrt(n / mx), color: "#b5652b", weight: 1, fillOpacity: .18 })
+    .bindTooltip(`${esc(z)}: ${n} change-outs`).addTo(area));
+  map.fitBounds(L.latLngBounds(x.card.zips.map(z => [z[2], z[3]])).pad(0.3));
+  $("#mapnote").textContent = `${x.name}: change-out permits by ZIP, last 12 months. Circles show ZIP areas, not addresses.`;
+}
+
 function fact(card, i) { return card.facts[i] ? card.facts[i].v : ""; }
 function render() {
   $("#tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.c === county));
   const cs = cards.filter(x => x.county === county);
+  drawMap(cs);
   $("#asof").textContent = cs.length ? "As of " + cs[0].as_of + ". Change-outs compare Dec 2025 to Nov 2026 against the prior 12 months." : "";
   $("#feed").innerHTML = "<tr><th>Firm</th><th>What changed</th></tr>" + feed.filter(x => x.county === county)
     .map(x => `<tr><td><a href="#" data-id="${x.firm_id}">${esc(x.firm_name)}</a></td><td class="${/down/.test(x.headline) ? "down" : "up"}">${esc(x.headline)}</td></tr>`).join("");
