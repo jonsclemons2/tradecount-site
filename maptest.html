@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Tradecount Sample</title>
+<style>
+:root{--ink:#1d2327;--muted:#5d6870;--paper:#f6f3ee;--card:#fff;--line:#ddd6cc;--copper:#b5652b;--green:#2f7a5b;--red:#a33b2f}
+@media (prefers-color-scheme:dark){:root{--ink:#ece8e1;--muted:#a7a29a;--paper:#16191b;--card:#1f2326;--line:#343a3e;--copper:#d9894e;--green:#6cc29b;--red:#e07c6e}}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif;-webkit-user-select:none;user-select:none}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--line)}
+.brand{font-weight:700;letter-spacing:.04em}.muted{color:var(--muted)}.small{font-size:13px}
+main{max-width:1100px;margin:0 auto;padding:20px 16px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 10px}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:12px;color:var(--muted);font-weight:600}
+td.n{text-align:right;font-variant-numeric:tabular-nums}button,select,input{font:inherit}
+button{background:var(--copper);color:#fff;border:0;border-radius:6px;padding:7px 12px;cursor:pointer}
+button.ghost{background:transparent;color:var(--copper);border:1px solid var(--copper)}
+.pill{display:inline-block;font-size:11px;padding:1px 7px;border-radius:10px;border:1px solid currentColor}
+.up{color:var(--green)}.down{color:var(--red)}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#wm{position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.07;overflow:hidden;font-size:15px;line-height:70px;color:var(--ink);transform:rotate(-24deg) scale(1.5);white-space:pre}
+dialog{max-width:620px;width:92vw;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.tabs button{background:transparent;color:var(--ink);border:1px solid var(--line)}.tabs button.on{background:var(--copper);color:#fff;border-color:var(--copper)}
+#map{height:420px;border-radius:8px;border:1px solid var(--line)}@media (max-width:640px){#map{height:340px}}
+.lg{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px;vertical-align:middle}
+.leaflet-popup-content{font:13px/1.4 system-ui,sans-serif}
+@media print{body{display:none}}
+</style>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const DATA = [{"firm_id": 1, "county": "Miami-Dade", "rank": 1, "name": "Test Firm 1", "as_of": "2026-11-23", "card": {"call_first": 1, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 99, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 2, "county": "Miami-Dade", "rank": 2, "name": "Test Firm 2", "as_of": "2026-11-23", "card": {"call_first": 2, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 98, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 3, "county": "Miami-Dade", "rank": 3, "name": "Test Firm 3", "as_of": "2026-11-23", "card": {"call_first": 3, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 97, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 4, "county": "Miami-Dade", "rank": 4, "name": "Test Firm 4", "as_of": "2026-11-23", "card": {"call_first": 4, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 96, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.73, -80.42, "33175"], "zips": [["33175", 10, 25.73, -80.42], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 5, "county": "Miami-Dade", "rank": 5, "name": "Test Firm 5", "as_of": "2026-11-23", "card": {"call_first": 5, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 95, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 6, "county": "Miami-Dade", "rank": 6, "name": "Test Firm 6", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 94, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 7, "county": "Miami-Dade", "rank": 7, "name": "Test Firm 7", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 93, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 8, "county": "Miami-Dade", "rank": 8, "name": "Test Firm 8", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 92, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 9, "county": "Miami-Dade", "rank": 9, "name": "Test Firm 9", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 91, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 10, "county": "Miami-Dade", "rank": 10, "name": "Test Firm 10", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 90, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 11, "county": "Miami-Dade", "rank": 11, "name": "Test Firm 11", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 89, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 12, "county": "Miami-Dade", "rank": 12, "name": "Test Firm 12", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 88, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 13, "county": "Miami-Dade", "rank": 13, "name": "Test Firm 13", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 87, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 14, "county": "Miami-Dade", "rank": 14, "name": "Test Firm 14", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 86, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 15, "county": "Miami-Dade", "rank": 15, "name": "Test Firm 15", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 85, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 16, "county": "Miami-Dade", "rank": 16, "name": "Test Firm 16", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 84, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 17, "county": "Miami-Dade", "rank": 17, "name": "Test Firm 17", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 83, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 18, "county": "Miami-Dade", "rank": 18, "name": "Test Firm 18", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 82, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 19, "county": "Miami-Dade", "rank": 19, "name": "Test Firm 19", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 81, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.73, -80.42, "33175"], "zips": [["33175", 10, 25.73, -80.42], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 20, "county": "Miami-Dade", "rank": 20, "name": "Test Firm 20", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 80, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 21, "county": "Miami-Dade", "rank": 21, "name": "Test Firm 21", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 79, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 22, "county": "Miami-Dade", "rank": 22, "name": "Test Firm 22", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 78, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 23, "county": "Miami-Dade", "rank": 23, "name": "Test Firm 23", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 77, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.73, -80.42, "33175"], "zips": [["33175", 10, 25.73, -80.42], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 24, "county": "Miami-Dade", "rank": 24, "name": "Test Firm 24", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 76, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 25, "county": "Miami-Dade", "rank": 25, "name": "Test Firm 25", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 75, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 26, "county": "Miami-Dade", "rank": 26, "name": "Test Firm 26", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 74, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 27, "county": "Miami-Dade", "rank": 27, "name": "Test Firm 27", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 73, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 28, "county": "Miami-Dade", "rank": 28, "name": "Test Firm 28", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 72, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 29, "county": "Miami-Dade", "rank": 29, "name": "Test Firm 29", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 71, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 30, "county": "Miami-Dade", "rank": 30, "name": "Test Firm 30", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 70, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 31, "county": "Miami-Dade", "rank": 31, "name": "Test Firm 31", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 69, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 32, "county": "Miami-Dade", "rank": 32, "name": "Test Firm 32", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 68, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.65, -80.41, "33186"], "zips": [["33186", 10, 25.65, -80.41], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 33, "county": "Miami-Dade", "rank": 33, "name": "Test Firm 33", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 67, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 34, "county": "Miami-Dade", "rank": 34, "name": "Test Firm 34", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 66, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 35, "county": "Miami-Dade", "rank": 35, "name": "Test Firm 35", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 65, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 36, "county": "Miami-Dade", "rank": 36, "name": "Test Firm 36", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 64, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.94, -80.31, "33015"], "zips": [["33015", 10, 25.94, -80.31], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 37, "county": "Miami-Dade", "rank": 37, "name": "Test Firm 37", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 63, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.53, -80.39, "33032"], "zips": [["33032", 10, 25.53, -80.39], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 38, "county": "Miami-Dade", "rank": 38, "name": "Test Firm 38", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 62, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 39, "county": "Miami-Dade", "rank": 39, "name": "Test Firm 39", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 61, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.73, -80.42, "33175"], "zips": [["33175", 10, 25.73, -80.42], ["33186", 4, 25.65, -80.41]]}}, {"firm_id": 40, "county": "Miami-Dade", "rank": 40, "name": "Test Firm 40", "as_of": "2026-11-23", "card": {"call_first": null, "score": 50, "why": ["test"], "match_grade": "high", "licenses": ["X"], "facts": [{"k": "a", "v": 60, "src": "t", "as_of": "t"}, {"k": "b", "v": 50, "src": "t", "as_of": "t"}, {"k": "c", "v": "1%", "src": "t", "as_of": "t"}], "pin": [25.6, -80.35, "33157"], "zips": [["33157", 10, 25.6, -80.35], ["33186", 4, 25.65, -80.41]]}}];
+window.TC_CONFIG = {};
+function q(rows){ const o = { select(){return o}, order(){return o}, limit(){return Promise.resolve({data: rows})}, maybeSingle(){return Promise.resolve({data: {counties:["Miami-Dade"]}})}, then(r){return Promise.resolve({data: rows}).then(r)} , delete(){return o}, eq(){return Promise.resolve({})}, insert(){return Promise.resolve({})} }; return o; }
+window.supabase = { createClient(){ return { auth: { getSession: async () => ({ data: { session: { user: { id: "u", email: "test@example.com" } } } }), signOut: async()=>{} },
+  from(t){ return q(t === "tc_firm_card" ? DATA : []); } }; } };
+</script>
+</head>
+<body oncontextmenu="return false">
+<header><span class="brand">TRADECOUNT</span><span id="who" class="small muted"></span></header>
+<main>
+  <section id="signin" class="card" hidden>
+    <h2>Sign In</h2>
+    <p class="muted small">This sample is private. Enter your email and we send a sign-in link.</p>
+    <div class="row"><input id="email" type="email" placeholder="you@company.com" style="padding:7px;min-width:260px"><button id="send">Send link</button></div>
+    <p id="sent" class="small muted"></p>
+  </section>
+  <section id="app" hidden>
+    <div class="row tabs" id="tabs" style="margin-bottom:14px"></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Where They Work</h2><span class="small muted"><span class="lg" style="background:#b5652b"></span>Call First<span class="lg" style="background:#3d6f8e"></span>Top 100</span></div><div id="map"></div><p class="small muted" id="mapnote">Each pin sits in the ZIP where the firm pulled the most change-out permits in the last 12 months. Tap a pin for the firm, then Work area to see its other ZIPs.</p></div>
+    <div class="card"><h2>What Changed</h2><p class="small muted" id="asof"></p><table id="feed"></table></div>
+    <div class="card"><h2>Call First</h2><p class="small muted">Firms growing fastest, with the public records behind each one. Growth only; nothing here predicts a sale.</p><table id="callfirst"></table></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Top Contractors By Change-Outs</h2><span class="small muted">Click a firm for its profile</span></div><table id="top"></table></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Your Watchlist</h2><button class="ghost" id="csv">Download watchlist CSV</button></div><p class="small muted">Up to 100 firms. There is no full-map export.</p><table id="watch"></table></div>
+    <p class="small muted">Public-record facts and labeled estimates. Each fact shows its source and as-of date. Not advice.</p>
+  </section>
+</main>
+<dialog id="dlg"><div id="dlgbody"></div><p><button id="close">Close</button></p></dialog>
+<div id="wm"></div>
+<script>
+const C = window.TC_CONFIG, sb = supabase.createClient(C.supabaseUrl, C.supabaseKey);
+const $ = s => document.querySelector(s), esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let cards = [], feed = [], watch = new Set(), county = null, me = null;
+
+$("#send").onclick = async () => {
+  const email = $("#email").value.trim(); if (!email) return;
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
+  $("#sent").textContent = error ? "Could not send: " + error.message : "Check your email for the sign-in link.";
+};
+$("#close").onclick = () => $("#dlg").close();
+document.addEventListener("copy", e => { e.preventDefault(); });
+
+async function start() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { $("#signin").hidden = false; return; }
+  me = session.user; $("#who").innerHTML = esc(me.email) + ' · <a href="#" id="out">Sign out</a>';
+  $("#out").onclick = async e => { e.preventDefault(); await sb.auth.signOut(); location.reload(); };
+  $("#wm").textContent = Array(60).fill(Array(8).fill(me.email + "   ").join("")).join("\n");
+  const [a, c, f, w] = await Promise.all([
+    sb.from("tc_account").select("counties").maybeSingle(),
+    sb.from("tc_firm_card").select("firm_id,county,rank,name,card,as_of").order("rank").limit(400),
+    sb.from("tc_change_feed").select("*").order("id").limit(100),
+    sb.from("tc_watch").select("firm_id"),
+  ]);
+  const counties = (a.data && a.data.counties) || [];
+  if (!counties.length) { $("#app").hidden = false; $("#app").innerHTML = '<div class="card">Your account has no territory yet.</div>'; return; }
+  cards = c.data || []; feed = f.data || []; (w.data || []).forEach(r => watch.add(r.firm_id));
+  county = counties[0];
+  const AREA = { "Orange": "City of Orlando", "Miami-Dade": "Miami-Dade County" };
+  $("#tabs").innerHTML = counties.map(x => `<button data-c="${esc(x)}">${esc(AREA[x] || x + " County")}</button>`).join("");
+  $("#tabs").querySelectorAll("button").forEach(b => b.onclick = () => { county = b.dataset.c; render(); });
+  $("#app").hidden = false; render();
+}
+
+let map = null, pins = null, area = null;
+function drawMap(cs) {
+  if (!window.L) { $("#mapnote").textContent = "The map could not load. The tables below have the same firms."; return; }
+  if (!map) {
+    map = L.map("map", { scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 16, attribution: "&copy; OpenStreetMap contributors" }).addTo(map);
+    pins = L.layerGroup().addTo(map); area = L.layerGroup().addTo(map);
+  }
+  pins.clearLayers(); area.clearLayers();
+  const pts = [], top = cs.slice(0, 100), seen = {};
+  const max = Math.max(1, ...top.map(x => +fact(x.card, 0) || 0));
+  top.slice().reverse().forEach(x => {
+    const p = x.card.pin; if (!p) return;
+    const k = p[2], n = seen[k] = (seen[k] || 0) + 1, ang = n * 2.4, d = n > 1 ? 0.004 * Math.sqrt(n) : 0;
+    const ll = [p[0] + d * Math.sin(ang), p[1] + d * Math.cos(ang)];
+    const cf = !!x.card.call_first, r = 5 + 9 * Math.sqrt((+fact(x.card, 0) || 0) / max);
+    const m = L.circleMarker(ll, { radius: r, color: "#fff", weight: 1, fillColor: cf ? "#b5652b" : "#3d6f8e", fillOpacity: .85 }).addTo(pins);
+    m.bindPopup(`<b>${esc(x.name)}</b><br>Rank #${x.rank}${cf ? " · Call First #" + x.card.call_first : ""}<br>${esc(fact(x.card, 0))} change-outs, busiest ZIP ${esc(k)}<br><a href="#" data-pid="${x.firm_id}">Profile</a> · <a href="#" data-aid="${x.firm_id}">Work area</a>`);
+    pts.push(ll);
+  });
+  map.off("popupopen").on("popupopen", e => {
+    const el = e.popup.getElement();
+    el.querySelectorAll("[data-pid]").forEach(a => a.onclick = ev => { ev.preventDefault(); profile(+a.dataset.pid); });
+    el.querySelectorAll("[data-aid]").forEach(a => a.onclick = ev => { ev.preventDefault(); workArea(+a.dataset.aid); });
+  });
+  $("#map").hidden = !pts.length;
+  $("#mapnote").textContent = pts.length ? "Each pin sits in the ZIP where the firm pulled the most change-out permits in the last 12 months. Tap a pin for the firm, then Work area to see its other ZIPs." : "No ZIP locations for this area yet. The tables below have the firms.";
+  if (pts.length) { map.invalidateSize(); map.fitBounds(L.latLngBounds(pts).pad(0.08)); }
+}
+function workArea(id) {
+  const x = cards.find(c => c.firm_id === id && c.county === county); if (!x || !x.card.zips) return;
+  area.clearLayers(); map.closePopup();
+  const mx = Math.max(...x.card.zips.map(z => z[1]));
+  x.card.zips.forEach(([z, n, la, lo]) => L.circle([la, lo], { radius: 700 + 1800 * Math.sqrt(n / mx), color: "#b5652b", weight: 1, fillOpacity: .18 })
+    .bindTooltip(`${esc(z)}: ${n} change-outs`).addTo(area));
+  map.fitBounds(L.latLngBounds(x.card.zips.map(z => [z[2], z[3]])).pad(0.3));
+  $("#mapnote").textContent = `${x.name}: change-out permits by ZIP, last 12 months. Circles show ZIP areas, not addresses.`;
+}
+
+function fact(card, i) { return card.facts[i] ? card.facts[i].v : ""; }
+function render() {
+  $("#tabs").querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.c === county));
+  const cs = cards.filter(x => x.county === county);
+  drawMap(cs);
+  $("#asof").textContent = cs.length ? "As of " + cs[0].as_of + ". Change-outs compare Dec 2025 to Nov 2026 against the prior 12 months." : "";
+  $("#feed").innerHTML = "<tr><th>Firm</th><th>What changed</th></tr>" + feed.filter(x => x.county === county)
+    .map(x => `<tr><td><a href="#" data-id="${x.firm_id}">${esc(x.firm_name)}</a></td><td class="${/down/.test(x.headline) ? "down" : "up"}">${esc(x.headline)}</td></tr>`).join("");
+  const cf = cs.filter(x => x.card.call_first).sort((a, b) => a.card.call_first - b.card.call_first);
+  $("#callfirst").innerHTML = "<tr><th>#</th><th>Firm</th><th>Why</th><th class='n'>Points</th></tr>" + cf
+    .map(x => `<tr><td>${x.card.call_first}</td><td><a href="#" data-id="${x.firm_id}">${esc(x.name)}</a></td><td class="small">${x.card.why.map(esc).join("; ")}</td><td class="n">${x.card.score}</td></tr>`).join("");
+  $("#top").innerHTML = "<tr><th>Rank</th><th>Firm</th><th class='n'>Change-outs</th><th class='n'>Prior yr</th><th>Share</th><th>Match</th><th></th></tr>" + cs.slice(0, 100)
+    .map(x => `<tr><td>${x.rank}</td><td><a href="#" data-id="${x.firm_id}">${esc(x.name)}</a></td><td class="n">${fact(x.card,0)}</td><td class="n">${fact(x.card,1)}</td><td class="small">${esc(fact(x.card,2))}</td><td><span class="pill">${esc(x.card.match_grade)}</span></td><td><button class="ghost" data-w="${x.firm_id}">${watch.has(x.firm_id) ? "Unwatch" : "Watch"}</button></td></tr>`).join("");
+  const wl = cards.filter(x => watch.has(x.firm_id));
+  $("#watch").innerHTML = wl.length ? "<tr><th>Firm</th><th>County</th><th class='n'>Change-outs</th></tr>" + wl.map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.county)}</td><td class="n">${fact(x.card,0)}</td></tr>`).join("") : "<tr><td class='muted'>No firms watched yet.</td></tr>";
+  document.querySelectorAll("[data-id]").forEach(a => a.onclick = e => { e.preventDefault(); profile(+a.dataset.id); });
+  document.querySelectorAll("[data-w]").forEach(b => b.onclick = () => toggle(+b.dataset.w));
+}
+function profile(id) {
+  const x = cards.find(c => c.firm_id === id && c.county === county) || cards.find(c => c.firm_id === id); if (!x) return;
+  $("#dlgbody").innerHTML = `<h2>${esc(x.name)}</h2><p class="small muted">${esc({Orange: "City of Orlando", "Miami-Dade": "Miami-Dade County"}[x.county] || x.county)} rank #${x.rank} · match grade ${esc(x.card.match_grade)} · licenses ${x.card.licenses.map(esc).join(", ")}</p>
+    <table><tr><th>Fact</th><th>Value</th><th>Source, as of</th></tr>${x.card.facts.map(f => `<tr><td>${esc(f.k)}</td><td>${esc(f.v)}</td><td class="small muted">${esc(f.src)}, ${esc(f.as_of)}</td></tr>`).join("")}</table>
+    <p class="small">${x.card.why.length ? "Why it ranks: " + x.card.why.map(esc).join("; ") : "No growth signals this year."}</p>
+    <p class="small muted">Facts from public records, tied by the method shown. Not a valuation and not a forecast.</p>`;
+  $("#dlg").showModal();
+}
+async function toggle(id) {
+  if (watch.has(id)) { await sb.from("tc_watch").delete().eq("firm_id", id); watch.delete(id); }
+  else { if (watch.size >= 100) return alert("Watchlist is capped at 100 firms."); await sb.from("tc_watch").insert({ user_id: me.id, firm_id: id }); watch.add(id); }
+  render();
+}
+$("#csv").onclick = () => {
+  const wl = cards.filter(x => watch.has(x.firm_id)).slice(0, 100);
+  const head = ["firm", "county", "rank", "change_outs_12m", "change_outs_prior", "share", "match_grade", "licenses", "exported_by", "exported_at"];
+  const rows = wl.map(x => [x.name, x.county, x.rank, fact(x.card,0), fact(x.card,1), fact(x.card,2), x.card.match_grade, x.card.licenses.join(" "), me.email, new Date().toISOString()]);
+  const csv = [head, ...rows].map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = "tradecount-watchlist.csv"; a.click();
+};
+start();
+</script>
+</body>
+</html>
