@@ -4,7 +4,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-<link rel="stylesheet" href="../assets/tc.css"><link rel="stylesheet" href="../assets/portal.css?v=6a1">
+<link rel="stylesheet" href="../assets/tc.css"><link rel="stylesheet" href="../assets/portal.css?v=7b1">
 <style>.demo{background:#FFF4D6;color:#5A4500;font-size:13px;text-align:center;padding:6px 12px;position:relative;z-index:1200}.demo a{font-weight:600;color:#3D2F00}</style>
 </head><body>
 <div class="demo">Demo with made-up firms and numbers. <a href="../news/access.html">Request access</a> to see the real record for your counties.</div>
@@ -31,7 +31,7 @@
   const cards = [], feed = []; let id = 1;
   for (const t of ["hvac","plumbing","electrical"]) for (const county of ["Orange","Miami-Dade"]) {
     const rows = []; for (let i = 0; i < 60; i++) { const n0 = Math.round(420 * Math.pow(.93, i) * (.7 + .6 * r())) + 4, n1 = Math.round(n0 * (.6 + .7 * r()));
-      rows.push({ name: A[(i * 7 + (t.length)) % A.length] + " " + S[t][i % 5] + (i >= 25 ? " " + (i - 24) : ""), n0, n1 }); }
+      rows.push({ name: A[(i * 7 + t.length) % 25] + " " + S[t][(i + Math.floor(i / 25)) % 5], n0, n1 }); }
     rows.sort((a, b) => b.n0 - a.n0); const tot0 = rows.reduce((x, y) => x + y.n0, 0) * 1.6, tot1 = rows.reduce((x, y) => x + y.n1, 0) * 1.6;
     rows.forEach((w, i) => { const zs = Z[county].map(z => [z[2], Math.round(w.n0 * r()) + 1, z[0] + (r() - .5) * .03, z[1] + (r() - .5) * .03]).sort((a, b) => b[1] - a[1]).slice(0, 5);
       const up = w.n0 > w.n1 * 1.25 && w.n0 > 40, cf = up && i < 40 ? i + 1 : null;
@@ -52,7 +52,7 @@
     const wc0 = thin ? null : 1 + Math.floor(3 * big), wc = Y.map((y, k) => thin ? null : Math.max(1, Math.round(wc0 * Math.pow(grow, k / 5))));
     const eq = Y.map((y, k) => thin || i % 3 === 1 ? null : Math.round((30000 + 400000 * big) * Math.pow(grow, k / 5)));
     const up = [p && p[4] >= 20 && p[4] > p[0] * 1.1 ? "permits" : null, wc[5] > (wc[0] || 0) && wc[5] >= 2 ? "comp sites" : null, eq[0] && eq[4] >= 50000 && eq[4] > eq[0] * 1.1 ? "equipment" : null].filter(Boolean);
-    hist.push({ firm_id: 500 + hist.length, county, trade: "hvac", name: A[(i * 11) % A.length] + " " + S.hvac[i % 5] + (i >= 25 ? " " + (i - 24) : ""), since: 1990 + (i * 7) % 33,
+    hist.push({ firm_id: 500 + hist.length, county, trade: "hvac", name: A[(i * 11) % 25] + " " + S.hvac[(i + Math.floor(i / 25)) % 5], since: 1990 + (i * 7) % 33,
       coverage: thin ? "thin" : p ? "permits" : "state", score: up.length ? up.length + grow - 1 : null, growth_rank: null,
       series: { y: Y, p, wc, eq, lic: Y.map(() => 1 + (i % 3 === 0)), up, full: 2025 } }); }
   for (const c of ["Orange", "Collier"]) hist.filter(h => h.county === c && h.score).sort((a, b) => b.score - a.score).forEach((h, k) => h.growth_rank = k + 1);
@@ -65,4 +65,4 @@
   window.TC_CONFIG = {};
 })();
 </script>
-<script src="../assets/portal.js?v=6a1"></script></body></html>
+<script src="../assets/portal.js?v=7b1"></script></body></html>

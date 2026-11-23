@@ -13,6 +13,7 @@ const UNIT = { hvac: "change-outs", plumbing: "plumbing permits", electrical: "e
 let me, counties = [], county, trade = "hvac", cache = {}, hist = {}, feed = [], watch = new Set(), sel = null, map, pins, area, view = "growth", q = "", cfOnly = false;
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
 let lens = store.get("tc_lens"); // "buy" (acquirers), "supply" (distributors) or null
+{ const l0 = new URLSearchParams(location.hash.slice(1)).get("l"); if (l0 === "buy" || l0 === "supply") { lens = l0; store.set("tc_lens", l0); store.set("tc_welcome", "1"); } }
 const PURPOSE = {
   growth: { buy: "Firms getting bigger on the public record over five years. Start at the top to build your call list of owners worth meeting.",
     supply: "Firms adding crews, sites and equipment over five years. These are the accounts to win before a competitor does.",
@@ -55,15 +56,16 @@ function welcome() {
     <div class="wr"><p class="ask">What are you here to do?</p>
     <button class="choice" data-l="buy"><b>Find firms to buy</b><span>Rank who is growing over five years and build a call list.</span></button>
     <button class="choice" data-l="supply"><b>Find accounts to supply</b><span>See who does the most work, where, and who is adding crews.</span></button>
-    <button class="skip" data-l="">Just show me the map</button></div></div>`;
+    <button class="skip" data-l="">Skip, show me the firms</button></div></div>`;
   w.hidden = false;
   w.querySelectorAll("button").forEach(b => b.onclick = () => { lens = b.dataset.l || null; if (lens) store.set("tc_lens", lens); store.set("tc_welcome", "1");
     w.hidden = true; view = lens === "supply" && COV[county] ? "year" : "growth"; sel = null; show(); });
 }
 function lensSwitch() {
-  return `<label class="lens">Using it to<select id="lens" aria-label="What you use Tradecount for"><option value="">Both</option><option value="buy"${lens === "buy" ? " selected" : ""}>Buy firms</option><option value="supply"${lens === "supply" ? " selected" : ""}>Supply firms</option></select></label>`;
+  const b = (v, t) => `<button data-l="${v}" aria-pressed="${(lens || "") === v}">${t}</button>`;
+  return `<div class="lens" role="group" aria-label="What you use Tradecount for"><span>I'm here to</span>${b("buy", "Buy firms")}${b("supply", "Supply firms")}${b("", "Both")}</div>`;
 }
-function wireLens() { const l = $("#lens"); if (l) l.onchange = e => { lens = e.target.value || null; store.set("tc_lens", lens || ""); show(); }; }
+function wireLens() { document.querySelectorAll(".lens button").forEach(x => x.onclick = () => { lens = x.dataset.l || null; store.set("tc_lens", lens || ""); show(); }); }
 function tabs() {
   $("#tabs").innerHTML = TRADES.map(([k, l, c]) => `<button role="tab" data-t="${k}" style="--c:${c}" aria-selected="${trade === k}"><i></i>${l}</button>`).join("")
     + `<button role="tab" data-t="watch" style="--c:#9AA6B2" aria-selected="${trade === "watch"}"><i></i>Watchlist <small>${watch.size}</small></button>`;
@@ -74,7 +76,7 @@ async function load(t) {
   return cache[t];
 }
 async function show() {
-  document.body.dataset.trade = trade; history.replaceState(null, "", "#t=" + trade + "&c=" + encodeURIComponent(county) + "&v=" + view);
+  document.body.dataset.trade = trade; history.replaceState(null, "", "#t=" + trade + "&c=" + encodeURIComponent(county) + "&v=" + view + (lens ? "&l=" + lens : ""));
   if (trade === "watch") return showWatch();
   if (GROWTH_TRADES.has(trade) && view === "growth") return showGrowth();
   const all = await load(trade), cs = all.filter(c => c.county === county), label = TRADES.find(t => t[0] === trade)[1];
@@ -193,10 +195,17 @@ async function loadHist(c, t) {
 }
 function lead(h) {
   const s = h.series, y0 = s.y[0], i0 = 0, iF = s.y.indexOf(s.full), last = s.y.length - 1, up = s.up || [];
-  if (up.includes("permits")) return [`${fmt(s.p[i0])} to ${fmt(s.p[iF])} permits`, `${y0} to ${s.full}`];
-  if (up.includes("comp sites")) return [`${s.wc[i0] || 0} to ${s.wc[last]} comp sites`, `${y0} to now`];
-  if (up.includes("equipment")) { const e = s.eq.filter(v => v).pop(); return [`${money(s.eq[i0])} to ${money(e)} equipment`, `${y0} to latest roll`]; }
-  return ["", ""];
+  const g = (a, b) => a ? Math.round(100 * (b - a) / a) : null;
+  if (up.includes("permits")) return [`${fmt(s.p[i0])} to ${fmt(s.p[iF])} permits`, `${y0} to ${s.full}`, g(s.p[i0], s.p[iF]), s.p.slice(0, iF + 1)];
+  if (up.includes("comp sites")) return [`${s.wc[i0] || 0} to ${s.wc[last]} comp sites`, `${y0} to now`, g(s.wc[i0], s.wc[last]), s.wc];
+  if (up.includes("equipment")) { const e = s.eq.filter(v => v).pop(); return [`${money(s.eq[i0])} to ${money(e)} equipment`, `${y0} to latest roll`, g(s.eq[i0], e), s.eq]; }
+  return ["", "", null, null];
+}
+function spark(vals) {
+  if (!vals || !vals.some(v => v)) return '<span class="dn">No trend on file</span>';
+  const mx = Math.max(...vals.map(v => v || 0)), w = 84 / vals.length;
+  return `<svg class="spark" viewBox="0 0 84 26" aria-hidden="true">${vals.map((v, i) => { const hh = v ? Math.max(2, 24 * v / mx) : 0;
+    return v ? `<rect x="${i * w + 1}" y="${26 - hh}" width="${w - 3}" height="${hh}" rx="1"${i === vals.length - 1 ? ' class="last"' : ""}></rect>` : `<rect x="${i * w + 1}" y="25" width="${w - 3}" height="1" class="nil"></rect>`; }).join("")}</svg>`;
 }
 async function showGrowth() {
   const label = TRADES.find(t => t[0] === trade)[1], opts = counties.map(c => `<option value="${esc(c)}" ${c === county ? "selected" : ""}>${esc(AREA[c])}</option>`).join("");
@@ -212,16 +221,17 @@ async function showGrowth() {
     <p class="covnote">${esc(COV[county] || COV_STATE)}</p>
     <div class="lower g5">
       <section class="panel"><div class="ph"><h2>Fastest growing, ${y0} to now</h2><input id="find" type="search" placeholder="Find any ${label} firm" aria-label="Find a firm" value="${esc(q)}"></div>
-        <div class="listwrap"><table class="rank grow"><thead><tr><th></th><th>Firm</th><th>What grew</th><th>Start to now</th></tr></thead><tbody id="rows"></tbody></table></div></section>
+        <div class="listwrap"><table class="rank grow"><thead><tr><th></th><th>Firm and what grew</th><th>Five years</th><th>Growth</th></tr></thead><tbody id="rows"></tbody></table></div></section>
       <section class="panel"><div class="ph"><h2>Five-year record</h2><span>Pick a firm on the list</span></div><div class="plate" id="plate"><span class="r1"></span><span class="r2"></span></div></section>
     </div>
     <p class="note">Ranked by how many signals grew from ${y0} to now and by how much: ${hasP ? "permits pulled (full years), " : ""}workers' comp work sites and equipment on the county tax roll. A firm needs real size to rank: ${hasP ? "20 or more permits in its last full year, " : ""}2 or more comp sites, or $50k or more in equipment. Florida DBPR licenses, FL workers' comp, FL DOR tangible property roll${hasP ? ", " + esc(SRC[county]) : ""}. Growth and activity only; nothing here predicts a sale.</p>`;
   $("#cty").onchange = e => { county = e.target.value; sel = null; q = ""; show(); }; wireToggle(); wireLens();
   const draw = () => {
     const term = q.trim().toUpperCase(), list = term ? hs.filter(h => h.name.toUpperCase().includes(term)).slice(0, 100) : ranked.slice(0, 100);
-    $("#rows").innerHTML = list.length ? list.map(h => { const [a, b] = lead(h), g = GRADE[h.coverage];
-      return `<tr data-id="${h.firm_id}"><td>${h.growth_rank || ""}</td><td>${esc(h.name)}${h.coverage === "thin" ? `<span class="thin" title="${g[1]}">Thin record</span>` : ""}</td>
-      <td class="chips">${(h.series.up || []).map(u => `<i>${esc(u[0].toUpperCase() + u.slice(1))}</i>`).join("") || '<span class="dn">None on file</span>'}</td><td>${esc(a)}${b ? `<small>${esc(b)}</small>` : ""}</td></tr>`; }).join("")
+    $("#rows").innerHTML = list.length ? list.map(h => { const [a, b, p, sv] = lead(h), g = GRADE[h.coverage];
+      return `<tr data-id="${h.firm_id}"><td>${h.growth_rank || ""}</td><td>${esc(h.name)}${h.coverage === "thin" ? `<span class="thin" title="${g[1]}">Thin record</span>` : ""}
+      <span class="chips">${(h.series.up || []).map(u => `<i>${esc(u[0].toUpperCase() + u.slice(1))}</i>`).join("") || '<span class="dn">Nothing grew on file</span>'}</span></td>
+      <td>${spark(sv)}</td><td class="gr">${p === null ? (a ? "New" : "") : `<b>${p >= 0 ? "+" : "−"}${Math.abs(p)}%</b>`}${a ? `<small>${esc(a)}, ${esc(b)}</small>` : ""}</td></tr>`; }).join("")
       : `<tr><td></td><td colspan="3" class="dn">${term ? "No firm by that name in this county." : "No firm grew on the record here."}</td></tr>`;
     $("#rows").onclick = e => { const r = e.target.closest("tr[data-id]"); if (r) pickH(+r.dataset.id, hs); };
     if (list.length) pickH(sel && hs.some(h => h.firm_id === sel) ? sel : list[0].firm_id, hs);
